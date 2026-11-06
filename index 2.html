@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circles Can Draw Anything - Fourier Series Explainer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+  :root{
+    --bg:#0b0b10; --panel:#15151d; --panel2:#1c1c26; --ink:#ece7da; --dim:#a49c8c;
+    --gold:#e8c56b; --circle:#f0a35e; --tip:#ff4d5e; --trace:#ff4d5e; --target:#3d6b52;
+    --accent:#7cc7ff; --line:#2a2a38;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       line-height:1.55;padding:0 0 60px}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-weight:600;color:var(--gold);
+     font-size:clamp(26px,5.5vw,40px);text-align:center;margin:28px 0 4px;letter-spacing:.5px}
+  .sub{text-align:center;color:var(--dim);margin:0 0 8px;font-size:15px}
+  .credit{text-align:center;color:var(--dim);font-size:13px;margin:2px 0 18px}
+  .credit b{color:var(--gold);font-weight:600}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+          padding:18px 18px 20px;margin:18px 0}
+  h2{font-family:Georgia,serif;color:var(--gold);font-size:22px;margin:2px 0 10px;font-weight:600}
+  h3{color:var(--ink);font-size:16px;margin:16px 0 6px}
+  p{margin:8px 0}
+  .eq{text-align:center;margin:12px 0;font-family:Georgia,serif;font-size:17px;overflow-x:auto;padding:4px 0}
+  .eq .katex{font-size:1.05em}
+  canvas{display:block;width:100%;border-radius:10px;background:#08080d;border:1px solid var(--line);
+         touch-action:manipulation}
+  .controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:12px 0 4px}
+  .ctl{display:flex;flex-direction:column;gap:2px;min-width:120px;flex:1}
+  .ctl label{font-size:12.5px;color:var(--dim)}
+  .ctl .val{font-size:12.5px;color:var(--gold);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;accent-color:var(--gold);height:44px}
+  select,button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:9px 12px;font-size:14px;min-height:44px}
+  button{cursor:pointer}
+  button:active{background:#262635}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+  .btnrow button{flex:0 0 auto}
+  .chk{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--dim);min-height:44px}
+  .chk input{width:18px;height:18px;accent-color:var(--gold)}
+  .stat{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .stat b{color:var(--gold);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:700px){.grid2{grid-template-columns:1.55fr 1fr}}
+  .photo{width:100%;border-radius:10px;border:1px solid var(--line)}
+  .caption{font-size:12.5px;color:var(--dim);margin-top:6px}
+  ul{padding-left:20px;margin:8px 0}
+  li{margin:5px 0}
+  .notice{background:#3a2a12;border:1px solid #7a5a1e;color:#ffd98a;border-radius:10px;
+          padding:10px 14px;font-size:14px;margin:14px 0}
+  .footer{text-align:center;color:var(--dim);font-size:13px;margin-top:26px}
+  .footer b{color:var(--gold)}
+  a{color:var(--accent)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--dim);margin:6px 0 0}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Circles Can Draw Anything</h1>
+<p class="sub">Fourier series: any shape, rebuilt from spinning circles</p>
+<p class="credit">Developed by <b>SonDaoVT, PhD</b></p>
+
+<div class="notice" id="jsnotice">Scripts seem to be blocked in this preview, so the interactive demos below cannot run.
+<strong>Open this file in Safari</strong> (or any full browser) to use the sliders and animations.</div>
+
+<section>
+<h2>1. The big idea</h2>
+<p>Take one circle spinning at some speed. Put a smaller circle on its rim, spinning at a different speed.
+Put a third on that one. The tip of the last arm traces a path. Joseph Fourier's claim, in modern dress, is wild:
+<em>any</em> closed curve, a heart, a star, your signature, is the path of such a chain of circles, if you pick the
+sizes and speeds right.</p>
+<div class="eq" data-tex="z(t)=\sum_{n=-N}^{N} c_n\, e^{i n t},\qquad c_n=\frac{1}{M}\sum_{k=0}^{M-1} z(t_k)\, e^{-i n t_k}">
+z(t) = &Sigma;<sub>n</sub> c<sub>n</sub> e<sup>int</sup>,&nbsp;&nbsp; c<sub>n</sub> = (1/M) &Sigma;<sub>k</sub> z(t<sub>k</sub>) e<sup>&minus;int<sub>k</sub></sup></div>
+<p>Each coefficient <em>c<sub>n</sub></em> is one circle: its length is |<em>c<sub>n</sub></em>|, its starting angle is the phase of
+<em>c<sub>n</sub></em>, and its spin rate is <em>n</em> turns per trip around the drawing (negative <em>n</em> spins backwards).
+The machine below computes these circles for real curves, live, using the formula above.</p>
+</section>
+
+<section>
+<h2>2. The epicycle machine</h2>
+<p>Pick a shape: heart, star, square, infinity, the outline of RMIT's red pixel logo, or a mystery face drawn from one continuous pen path (guess who?). The pen is the tip of
+the last circle. Start with 1 circle (just an ellipse-ish wobble), then slide up and watch the machine
+<em>learn the shape</em>. Try the square or the RMIT mark: circles hate corners, and you can see why.</p>
+
+<div class="btnrow" id="shapeRow">
+  <button data-shape="heart" class="shapebtn">Heart</button>
+  <button data-shape="star" class="shapebtn">Star</button>
+  <button data-shape="square" class="shapebtn">Square</button>
+  <button data-shape="infinity" class="shapebtn">Infinity</button>
+  <button data-shape="rmit" class="shapebtn">RMIT logo</button>
+  <button data-shape="guesswho" class="shapebtn">Guess who?</button>
+</div>
+
+<canvas id="epi" width="820" height="560"></canvas>
+<div class="legend">
+  <span><span class="sw" style="background:var(--circle)"></span>circles</span>
+  <span><span class="sw" style="background:var(--trace)"></span>pen trace</span>
+  <span><span class="sw" style="background:var(--target)"></span>target shape</span>
+</div>
+
+<div class="controls">
+  <div class="ctl">
+    <label for="nCircles">Number of circles <span class="val" id="nCirclesVal"></span></label>
+    <input type="range" id="nCircles" min="1" max="2000" step="1" value="10">
+  </div>
+  <div class="ctl">
+    <label for="speed">Speed <span class="val" id="speedVal"></span></label>
+    <input type="range" id="speed" min="10" max="300" step="5" value="100">
+  </div>
+  <div class="ctl">
+    <label for="zoom">Zoom <span class="val" id="zoomVal"></span></label>
+    <input type="range" id="zoom" min="60" max="160" step="5" value="100">
+  </div>
+</div>
+<div class="btnrow">
+  <button id="playBtn">Pause</button>
+  <button id="musicBtn" aria-pressed="true" title="Upbeat music, synthesized live by your browser - a different tune per shape">&#9835; Music: on</button>
+  <label class="chk"><input type="checkbox" id="showCircles" checked> show circles</label>
+  <label class="chk"><input type="checkbox" id="showTarget" checked> show target</label>
+</div>
+<p class="stat" id="errStat"></p>
+<p class="caption" style="margin-top:2px">Music is <b>on by default</b>, and each shape plays its own tune - switch the shape and the tune
+switches too. Phones and browsers refuse to make sound before you touch the page, so the music starts on your
+<b>first tap or click anywhere</b> (that is the browser's rule, not a bug). The &#9834; Music button turns it off.
+Everything is synthesized live in this page (Web Audio oscillators, no audio file), so it also works offline.</p>
+
+<div class="grid2" style="margin-top:14px">
+  <div>
+    <h3>Which circles matter?</h3>
+    <canvas id="spec" width="520" height="230"></canvas>
+    <p class="caption">Circle sizes, biggest first. The lit bars are the ones your slider is currently using.
+    For the heart, a handful of big circles does almost all the work; that is why MP3 and JPEG compression work at all.</p>
+  </div>
+  <div>
+    <h3>What the heart is made of</h3>
+    <div class="eq" data-tex="x=16\sin^3 t">x = 16 sin&sup3;(t)</div>
+    <div class="eq" data-tex="y=13\cos t-5\cos 2t-2\cos 3t-\cos 4t">y = 13 cos(t) &minus; 5 cos(2t) &minus; 2 cos(3t) &minus; cos(4t)</div>
+    <p class="caption">The heart from the poster. It is already a tiny Fourier series, only 1 sine and 4 cosine terms,
+    so about 9 circles redraw it almost perfectly. Slide to 9 circles on the heart and watch the error collapse.</p>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>3. Waves: the classic Fourier series</h2>
+<p>The same trick works for ordinary waves <em>y(t)</em>. Here each circle adds one sine term. The chain on the left
+spins; the pen's height is the wave's value, unrolled to the right as time passes. Add terms and watch a stack of
+smooth sines grow corners.</p>
+
+<div class="btnrow" id="waveRow">
+  <button data-wave="square" class="wavebtn">Square wave</button>
+  <button data-wave="sawtooth" class="wavebtn">Sawtooth</button>
+  <button data-wave="triangle" class="wavebtn">Triangle</button>
+</div>
+<canvas id="wave" width="820" height="380"></canvas>
+<div class="legend">
+  <span><span class="sw" style="background:var(--accent)"></span>partial sum (your terms)</span>
+  <span><span class="sw" style="background:var(--target)"></span>target wave</span>
+</div>
+<div class="controls">
+  <div class="ctl">
+    <label for="nTerms">Sine terms <span class="val" id="nTermsVal"></span></label>
+    <input type="range" id="nTerms" min="1" max="25" step="1" value="3">
+  </div>
+  <div class="ctl">
+    <label for="wspeed">Speed <span class="val" id="wspeedVal"></span></label>
+    <input type="range" id="wspeed" min="10" max="300" step="5" value="100">
+  </div>
+</div>
+<p class="stat" id="gibbsStat"></p>
+<div class="eq" data-tex="\text{square: } y(t)=\frac{4}{\pi}\sum_{k=0}^{K-1}\frac{\sin((2k{+}1)t)}{2k{+}1}">
+square: y(t) = (4/&pi;) &Sigma;<sub>k</sub> sin((2k+1)t) / (2k+1)</div>
+<p><strong>Gibbs phenomenon.</strong> Crank the terms to 25 on the square wave. The corners sharpen, but the little
+ear next to each jump never dies: it stays about <em>9% of the jump height</em>, no matter how many circles you add.
+It only gets squeezed thinner. Smooth waves (triangle) converge nicely; jumps never fully forgive you.</p>
+</section>
+
+<section>
+<h2>4. A real machine that does this</h2>
+<div class="grid2">
+  <div>
+    <p>Kids have played with a mechanical cousin of this machine for decades: the <strong>Spirograph</strong>, a gear
+    rolling inside a ring. One gear spinning inside another is exactly two circles chained together, and its pen draws
+    hypotrochoids, the simplest epicycle curves. Our machine is the same idea with the training wheels off:
+    as many circles as you like, each with its own size, speed and direction.</p>
+    <p>The math that finds the circles, the Fourier transform, runs inside every phone call (MP3/AAC audio),
+    every photo (JPEG), every MRI scan, and every noise-cancelling headphone.</p>
+  </div>
+  <div>
+    <img class="photo" alt="A Spirograph drawing toy: plastic gears rolling inside a ring to draw hypotrochoid curves"
+         src="https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Spirograph_set_%28UK_Palitoy_early_1980s%29_%28perspective_fixed%29.jpg/960px-Spirograph_set_%28UK_Palitoy_early_1980s%29_%28perspective_fixed%29.jpg"
+         onerror="this.style.display='none';document.getElementById('photoAlt').style.display='block'">
+    <p class="caption" id="photoAlt" style="display:none">(Photo could not load offline: a Spirograph set, gears rolling inside rings.)</p>
+    <p class="caption">Spirograph set (Palitoy, early 1980s). Photo: Wikimedia Commons (Palitoy Spirograph set, perspective fixed), CC BY-SA 3.0.</p>
+  </div>
+</div>
+</section>
+
+<section>
+<h2>5. Model honesty: what this demo assumes</h2>
+<ul>
+  <li><strong>Sampling.</strong> The machine does not see the true mathematical curve. It sees <em>M</em> = 2048 equally spaced points
+  on each shape and runs a discrete
+  Fourier transform, so even at the slider's top it reproduces the <em>sampled</em> curve, not the ideal one.</li>
+  <li><strong>Finite terms.</strong> A true Fourier series can need infinitely many circles. The slider caps at 2000 circles (raised from 500 in this
+  version). All 2000 coefficients contribute to the pen position, so corners
+  and fine detail are always approximate. The error number under the machine is the RMS distance to the 2048-point sampled target, computed from the omitted coefficients (Parseval's identity), not a pixel comparison with the scan. The trace is drawn from 16,384 points of the selected Fourier sum, so fine detail is not skipped between animation frames. FFT calculation, cached shapes and an incremental trace keep high counts responsive. All selected terms contribute to the pen position; circle outlines and arms smaller than half a canvas pixel are not painted, because they would only overdraw the same pixels. Speed still depends on your device.</li>
+  <li><strong>Gibbs overshoot.</strong> For discontinuous targets (square wave, the square's corners), partial sums overshoot
+  by about 9% of the jump. More terms shrink the overshoot's width, not its height. That is a theorem, not a bug in this page.</li>
+  <li><strong>Order of circles.</strong> Circles are drawn biggest-first for clarity. Physically the order along the chain does not
+  change the final path, only the intermediate wiggles.</li>
+  <li><strong>Music.</strong> Each shape has its own synthesized tune - heart, star, square, infinity, the RMIT
+  mark and the Guess who? face each play a different chord progression and melody, generated note-by-note in this page (Web Audio oscillators,
+  no recordings, works offline). Music is on by default per request; browsers and phones block all sound until you
+  touch the page, so playback begins on your first tap anywhere, and the button then simply toggles it. The tunes
+  do not affect the math.</li>
+  <li><strong>RMIT logo.</strong> The "RMIT logo" shape traces the outer outline of RMIT University's red pixel mark,
+  sampled directly from the vector file <em>RMIT University Logo.svg</em> (Wikimedia Commons; the same mark design
+  is served on rmit.edu.au today). The outline's 11 straight steps and 2 curved arcs are taken from that file's path
+  data as-is, so the silhouette is geometrically faithful to the source vector; the 2048-point resampling adds
+  only a sub-pixel blur. Only the outer silhouette is traced - the "RMIT UNIVERSITY" wordmark and the red fill are
+  not part of the drawing, and the mark itself remains RMIT's trademark.</li>
+  <li><strong>Guess who?</strong> The "Guess who?" shape traces a hand-drawn line drawing of a face supplied by the
+  page's author - head outline, scribbled hair, brows, eyes, nose, lips, chin, ear and neck. It traces the drawn
+  lines themselves, not a silhouette. The scanned strokes were thinned to one-pixel skeletons and ordered into a
+  single continuous pen path (about 13,900 px of ink in the scan, simplified to 1,685 vertices, then sampled at
+  <em>M</em> = 2048 for this shape). The pen never lifts: the drawing's separate strokes are joined by about 220
+  straight connecting moves, most of them shorter than 3 px on the roughly 370 px drawing and effectively
+  invisible, plus a few longer chords (five over 25 px, the longest 48 px) that are joins, not original lines.
+  Faithfulness to the traced lines: RMS error 23.6 px with 10 circles, 14.3 px at 25, 8.2 px at 50, 4.3 px at
+  100, 2.1 px at 200 and 0.8 px at 500 - the face is unmistakable by 50 circles and near-exact by 500. That is
+  why this drawing needs more circles than a heart or a logo outline. The slider now runs to 2000; at that setting its sampled-path RMS error is about 0.0103 px. More circles do not remove the connecting chords, restore ink lost during tracing, or make the traced path identical to the original scan.</li>
+  <li><strong>Real-world claims.</strong> MP3, JPEG and MRI use Fourier's idea but with extra engineering (psychoacoustics,
+  quantization, k-space physics). The circle picture is the honest core, not the whole device.</li>
+</ul>
+</section>
+
+<div class="footer">Developed by <b>SonDaoVT, PhD</b> &middot; interactive Fourier series explainer</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+"use strict";
+// ---------- script-blocked notice ----------
+document.getElementById('jsnotice').style.display='none';
+
+// ---------- KaTeX with HTML fallback ----------
+(function(){
+  if(window.katex){
+    document.querySelectorAll('.eq[data-tex]').forEach(function(el){
+      try{ katex.render(el.getAttribute('data-tex'), el, {throwOnError:false}); }catch(e){}
+    });
+  }
+})();
+
+// ---------- helpers ----------
+function fitCanvas(cv){
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+  var w = cv.clientWidth || cv.width;
+  var h = w * cv.height / cv.width;
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  var ctx = cv.getContext('2d');
+  ctx.setTransform(cv.width/820, 0, 0, cv.width/820, 0, 0); // design coords 820 wide
+  return ctx;
+}
+
+// ---------- shape sampling ----------
+var M = 2048;
+function sampleParam(f){
+  var pts=[];
+  for(var k=0;k<M;k++){ var t=2*Math.PI*k/M; var p=f(t); pts.push({x:p[0], y:p[1]}); }
+  return pts;
+}
+function samplePolyline(verts, NS){ // uniform along perimeter of closed polyline
+  NS = NS || M;
+  var seg=[], L=0;
+  for(var i=0;i<verts.length;i++){
+    var a=verts[i], b=verts[(i+1)%verts.length];
+    var len=Math.hypot(b[0]-a[0], b[1]-a[1]); seg.push({a:a,b:b,len:len}); L+=len;
+  }
+  var pts=[];
+  for(var k=0;k<NS;k++){
+    var s=L*k/NS, j=0;
+    while(s>seg[j].len && j<seg.length-1){ s-=seg[j].len; j++; }
+    var u=s/seg[j].len, a=seg[j].a, b=seg[j].b;
+    pts.push({x:a[0]+(b[0]-a[0])*u, y:a[1]+(b[1]-a[1])*u});
+  }
+  return pts;
+}
+function centerScale(pts, targetRadius){
+  var mx=0,my=0,i;
+  for(i=0;i<pts.length;i++){ mx+=pts[i].x; my+=pts[i].y; }
+  mx/=pts.length; my/=pts.length;
+  var r=0;
+  for(i=0;i<pts.length;i++){ r=Math.max(r, Math.hypot(pts[i].x-mx, pts[i].y-my)); }
+  var s=targetRadius/r;
+  return pts.map(function(p){ return {x:(p.x-mx)*s, y:(p.y-my)*s}; });
+}
+
+// RMIT University red pixel-mark outline, sampled from RMIT University Logo.svg (Wikimedia Commons).
+// 461 points along the mark's outer path (staircase left edge + rounded right side).
+var RMIT_VERTS = [[0.0,-0.0],[-0.122,-0.0],[-0.245,-0.0],[-0.367,-0.0],[-0.49,-0.0],[-0.612,-0.0],[-0.735,-0.0],[-0.857,-0.0],[-0.979,-0.0],[-1.102,-0.0],[-1.224,-0.0],[-1.347,-0.0],[-1.469,-0.0],[-1.591,-0.0],[-1.714,-0.0],[-1.836,-0.0],[-1.959,-0.0],[-2.081,-0.0],[-2.204,-0.0],[-2.326,-0.0],[-2.448,-0.0],[-2.571,-0.0],[-2.693,-0.0],[-2.816,-0.0],[-2.938,-0.0],[-2.938,0.126],[-2.938,0.251],[-2.938,0.377],[-2.938,0.503],[-2.938,0.628],[-2.938,0.754],[-2.938,0.879],[-2.938,1.005],[-2.938,1.131],[-2.938,1.256],[-2.938,1.382],[-2.938,1.508],[-2.938,1.633],[-2.938,1.759],[-2.938,1.884],[-2.938,2.01],[-2.938,2.136],[-2.938,2.261],[-2.938,2.387],[-3.06,2.387],[-3.183,2.387],[-3.305,2.387],[-3.427,2.387],[-3.55,2.387],[-3.672,2.387],[-3.794,2.387],[-3.916,2.387],[-4.039,2.387],[-4.161,2.387],[-4.283,2.387],[-4.406,2.387],[-4.528,2.387],[-4.65,2.387],[-4.772,2.387],[-4.895,2.387],[-5.017,2.387],[-5.139,2.387],[-5.262,2.387],[-5.384,2.387],[-5.506,2.387],[-5.629,2.387],[-5.751,2.387],[-5.873,2.387],[-5.995,2.387],[-6.118,2.387],[-6.24,2.387],[-6.362,2.387],[-6.485,2.387],[-6.607,2.387],[-6.729,2.387],[-6.852,2.387],[-6.974,2.387],[-7.096,2.387],[-7.219,2.387],[-7.341,2.387],[-7.463,2.387],[-7.585,2.387],[-7.708,2.387],[-7.83,2.387],[-7.83,2.508],[-7.83,2.63],[-7.83,2.751],[-7.83,2.873],[-7.83,2.994],[-7.83,3.115],[-7.83,3.237],[-7.83,3.358],[-7.83,3.48],[-7.83,3.601],[-7.83,3.722],[-7.83,3.844],[-7.83,3.965],[-7.83,4.086],[-7.83,4.208],[-7.83,4.329],[-7.83,4.451],[-7.83,4.572],[-7.83,4.693],[-7.83,4.815],[-7.83,4.936],[-7.83,5.058],[-7.83,5.179],[-7.83,5.3],[-7.83,5.422],[-7.83,5.543],[-7.83,5.665],[-7.83,5.786],[-7.83,5.907],[-7.83,6.029],[-7.83,6.15],[-7.83,6.271],[-7.83,6.393],[-7.83,6.514],[-7.83,6.636],[-7.83,6.757],[-7.83,6.878],[-7.83,7.0],[-7.83,7.121],[-7.83,7.243],[-7.83,7.364],[-7.953,7.364],[-8.075,7.364],[-8.198,7.364],[-8.321,7.364],[-8.443,7.364],[-8.566,7.364],[-8.689,7.364],[-8.811,7.364],[-8.934,7.364],[-9.057,7.364],[-9.179,7.364],[-9.302,7.364],[-9.425,7.364],[-9.547,7.364],[-9.67,7.364],[-9.793,7.364],[-9.915,7.364],[-10.038,7.364],[-10.161,7.364],[-10.283,7.364],[-10.406,7.364],[-10.529,7.364],[-10.651,7.364],[-10.774,7.364],[-10.897,7.364],[-11.019,7.364],[-11.142,7.364],[-11.265,7.364],[-11.387,7.364],[-11.51,7.364],[-11.51,7.486],[-11.51,7.608],[-11.51,7.729],[-11.51,7.851],[-11.51,7.973],[-11.51,8.095],[-11.51,8.217],[-11.51,8.339],[-11.51,8.46],[-11.51,8.582],[-11.51,8.704],[-11.51,8.826],[-11.51,8.948],[-11.51,9.069],[-11.51,9.191],[-11.51,9.313],[-11.51,9.435],[-11.51,9.557],[-11.51,9.679],[-11.51,9.8],[-11.51,9.922],[-11.51,10.044],[-11.51,10.166],[-11.51,10.288],[-11.51,10.409],[-11.51,10.531],[-11.51,10.653],[-11.51,10.775],[-11.51,10.897],[-11.51,11.019],[-11.51,11.14],[-11.51,11.262],[-11.51,11.384],[-11.51,11.506],[-11.51,11.628],[-11.51,11.749],[-11.51,11.871],[-11.51,11.993],[-11.51,12.115],[-11.51,12.237],[-11.51,12.358],[-11.51,12.48],[-11.51,12.602],[-11.51,12.724],[-11.51,12.846],[-11.51,12.968],[-11.51,13.089],[-11.51,13.211],[-11.51,13.333],[-11.51,13.455],[-11.51,13.577],[-11.51,13.698],[-11.51,13.82],[-11.51,13.942],[-11.51,14.064],[-11.51,14.186],[-11.51,14.308],[-11.51,14.429],[-11.51,14.551],[-11.51,14.673],[-11.387,14.673],[-11.265,14.673],[-11.142,14.673],[-11.019,14.673],[-10.897,14.673],[-10.774,14.673],[-10.651,14.673],[-10.529,14.673],[-10.406,14.673],[-10.283,14.673],[-10.161,14.673],[-10.038,14.673],[-9.915,14.673],[-9.793,14.673],[-9.67,14.673],[-9.547,14.673],[-9.425,14.673],[-9.302,14.673],[-9.179,14.673],[-9.057,14.673],[-8.934,14.673],[-8.811,14.673],[-8.689,14.673],[-8.566,14.673],[-8.443,14.673],[-8.321,14.673],[-8.198,14.673],[-8.075,14.673],[-7.953,14.673],[-7.83,14.673],[-7.83,14.794],[-7.83,14.916],[-7.83,15.037],[-7.83,15.159],[-7.83,15.28],[-7.83,15.401],[-7.83,15.523],[-7.83,15.644],[-7.83,15.766],[-7.83,15.887],[-7.83,16.009],[-7.83,16.13],[-7.83,16.251],[-7.83,16.373],[-7.83,16.494],[-7.83,16.616],[-7.83,16.737],[-7.83,16.858],[-7.83,16.98],[-7.83,17.101],[-7.83,17.223],[-7.83,17.344],[-7.83,17.466],[-7.83,17.587],[-7.83,17.708],[-7.83,17.83],[-7.83,17.951],[-7.83,18.073],[-7.83,18.194],[-7.83,18.315],[-7.83,18.437],[-7.83,18.558],[-7.83,18.68],[-7.83,18.801],[-7.83,18.923],[-7.83,19.044],[-7.83,19.165],[-7.83,19.287],[-7.83,19.408],[-7.83,19.53],[-7.83,19.651],[-7.708,19.651],[-7.585,19.651],[-7.463,19.651],[-7.341,19.651],[-7.218,19.651],[-7.096,19.651],[-6.974,19.651],[-6.852,19.651],[-6.729,19.651],[-6.607,19.651],[-6.485,19.651],[-6.362,19.651],[-6.24,19.651],[-6.118,19.651],[-5.995,19.651],[-5.873,19.651],[-5.751,19.651],[-5.629,19.651],[-5.506,19.651],[-5.384,19.651],[-5.262,19.651],[-5.139,19.651],[-5.017,19.651],[-4.895,19.651],[-4.772,19.651],[-4.65,19.651],[-4.528,19.651],[-4.406,19.651],[-4.283,19.651],[-4.161,19.651],[-4.039,19.651],[-3.916,19.651],[-3.794,19.651],[-3.672,19.651],[-3.55,19.651],[-3.427,19.651],[-3.305,19.651],[-3.183,19.651],[-3.06,19.651],[-2.938,19.651],[-2.938,19.776],[-2.938,19.902],[-2.938,20.027],[-2.938,20.152],[-2.938,20.277],[-2.938,20.403],[-2.938,20.528],[-2.938,20.653],[-2.938,20.778],[-2.938,20.904],[-2.938,21.029],[-2.938,21.154],[-2.938,21.279],[-2.938,21.405],[-2.938,21.53],[-2.938,21.655],[-2.938,21.78],[-2.938,21.906],[-2.938,22.031],[-2.815,22.031],[-2.691,22.031],[-2.568,22.031],[-2.445,22.031],[-2.321,22.031],[-2.198,22.031],[-2.075,22.031],[-1.951,22.031],[-1.828,22.031],[-1.705,22.031],[-1.581,22.031],[-1.458,22.031],[-1.335,22.031],[-1.211,22.031],[-1.088,22.031],[-0.965,22.031],[-0.841,22.031],[-0.718,22.031],[-0.595,22.031],[-0.471,22.031],[-0.348,22.031],[0.029,22.025],[0.404,22.006],[0.777,21.975],[1.147,21.931],[1.515,21.876],[1.879,21.809],[2.24,21.731],[2.597,21.641],[2.951,21.54],[3.3,21.428],[3.645,21.305],[3.985,21.172],[4.32,21.029],[4.651,20.875],[4.976,20.712],[5.295,20.538],[5.608,20.356],[5.916,20.164],[6.217,19.962],[6.511,19.752],[6.798,19.533],[7.079,19.305],[7.352,19.07],[7.617,18.826],[7.874,18.574],[8.124,18.314],[8.365,18.047],[8.597,17.772],[8.82,17.49],[9.035,17.202],[9.239,16.906],[9.435,16.604],[9.62,16.296],[9.795,15.981],[9.96,15.661],[10.114,15.335],[10.258,15.003],[10.39,14.666],[10.51,14.323],[10.619,13.976],[10.717,13.624],[10.802,13.267],[10.874,12.906],[10.934,12.541],[10.982,12.172],[11.016,11.799],[11.036,11.423],[11.043,11.043],[11.037,10.666],[11.017,10.291],[10.986,9.92],[10.941,9.552],[10.885,9.188],[10.817,8.828],[10.737,8.472],[10.646,8.12],[10.543,7.773],[10.43,7.431],[10.305,7.093],[10.17,6.761],[10.024,6.433],[9.869,6.112],[9.703,5.796],[9.527,5.486],[9.342,5.183],[9.147,4.885],[8.944,4.595],[8.731,4.311],[8.509,4.034],[8.279,3.765],[8.041,3.503],[7.795,3.249],[7.54,3.002],[7.278,2.764],[7.009,2.534],[6.732,2.312],[6.449,2.1],[6.158,1.896],[5.861,1.701],[5.557,1.516],[5.247,1.34],[4.932,1.175],[4.61,1.019],[4.283,0.873],[3.95,0.738],[3.613,0.613],[3.27,0.5],[2.923,0.397],[2.571,0.306],[2.215,0.226],[1.855,0.158],[1.491,0.102],[1.123,0.057],[0.752,0.026],[0.377,0.006]];
+
+// Guess who? face: one continuous pen path tracing the drawn lines of a hand-drawn face sketch
+// (head outline, scribbled hair, brows, eyes, nose, lips, chin, ear, neck) supplied by the page's author.
+// Scan skeletonised to 1 px, strokes ordered into a single no-pen-lift path, RDP-simplified to 1685 vertices.
+// Straight joins between separate strokes are part of the path (the pen never lifts).
+var FACE_VERTS = [[455.0,607.0],[454.0,586.0],[456.0,577.0],[456.0,558.0],[458.0,550.0],[458.0,530.0],[461.0,528.0],[461.0,508.0],[462.0,507.0],[462.0,497.0],[463.0,497.0],[463.0,479.0],[461.0,472.0],[461.0,463.0],[458.0,452.0],[459.0,436.0],[461.0,435.0],[462.0,432.0],[471.0,430.0],[476.0,427.0],[481.0,421.0],[483.0,421.0],[493.0,411.0],[497.0,404.0],[501.0,401.0],[501.0,398.0],[504.0,392.0],[502.0,393.0],[502.0,395.0],[494.0,397.0],[486.0,401.0],[482.0,405.0],[480.0,405.0],[475.0,402.0],[475.0,396.0],[478.0,395.0],[481.0,391.0],[485.0,389.0],[486.0,380.0],[485.0,382.0],[480.0,384.0],[481.0,384.0],[480.0,392.0],[479.0,385.0],[478.0,387.0],[469.0,387.0],[464.0,382.0],[462.0,392.0],[464.0,395.0],[457.0,397.0],[459.0,393.0],[461.0,392.0],[460.0,384.0],[463.0,381.0],[463.0,377.0],[469.0,371.0],[473.0,364.0],[473.0,357.0],[470.0,344.0],[464.0,343.0],[464.0,335.0],[374.0,278.0],[370.0,278.0],[372.0,277.0],[372.0,274.0],[363.0,266.0],[350.0,259.0],[342.0,257.0],[340.0,255.0],[325.0,251.0],[307.0,252.0],[292.0,257.0],[285.0,261.0],[280.0,265.0],[303.0,263.0],[299.0,262.0],[293.0,265.0],[286.0,271.0],[286.0,278.0],[279.0,279.0],[278.0,278.0],[280.0,274.0],[285.0,273.0],[286.0,277.0],[288.0,278.0],[305.0,280.0],[302.0,272.0],[303.0,265.0],[312.0,258.0],[320.0,257.0],[322.0,253.0],[321.0,256.0],[325.0,257.0],[328.0,261.0],[330.0,260.0],[341.0,261.0],[358.0,270.0],[361.0,274.0],[329.0,262.0],[328.0,266.0],[326.0,267.0],[326.0,271.0],[318.0,274.0],[325.0,266.0],[318.0,259.0],[306.0,265.0],[311.0,271.0],[317.0,274.0],[317.0,277.0],[313.0,280.0],[306.0,279.0],[318.0,278.0],[322.0,283.0],[334.0,283.0],[342.0,282.0],[356.0,277.0],[361.0,277.0],[362.0,275.0],[365.0,278.0],[369.0,278.0],[366.0,279.0],[363.0,284.0],[342.0,293.0],[342.0,294.0],[339.0,294.0],[339.0,295.0],[314.0,296.0],[264.0,347.0],[270.0,356.0],[271.0,361.0],[270.0,363.0],[272.0,362.0],[275.0,363.0],[279.0,367.0],[279.0,369.0],[269.0,364.0],[269.0,367.0],[267.0,370.0],[256.0,377.0],[219.0,378.0],[223.0,368.0],[227.0,365.0],[243.0,361.0],[225.0,367.0],[225.0,366.0],[221.0,371.0],[221.0,377.0],[212.0,380.0],[222.0,424.0],[229.0,420.0],[238.0,420.0],[244.0,422.0],[254.0,428.0],[264.0,437.0],[282.0,444.0],[283.0,448.0],[288.0,447.0],[294.0,450.0],[294.0,454.0],[289.0,459.0],[286.0,460.0],[267.0,479.0],[247.0,485.0],[246.0,490.0],[244.0,491.0],[242.0,495.0],[241.0,500.0],[242.0,505.0],[253.0,506.0],[372.0,537.0],[365.0,539.0],[332.0,561.0],[329.0,561.0],[327.0,563.0],[310.0,568.0],[300.0,573.0],[261.0,583.0],[247.0,585.0],[213.0,584.0],[207.0,582.0],[200.0,582.0],[174.0,570.0],[175.0,568.0],[172.0,561.0],[171.0,551.0],[176.0,535.0],[188.0,523.0],[197.0,517.0],[201.0,516.0],[205.0,512.0],[212.0,509.0],[212.0,508.0],[173.0,515.0],[176.0,513.0],[178.0,487.0],[182.0,494.0],[182.0,497.0],[177.0,509.0],[177.0,513.0],[178.0,513.0],[207.0,505.0],[216.0,506.0],[216.0,507.0],[213.0,507.0],[241.0,506.0],[246.0,484.0],[232.0,484.0],[222.0,486.0],[213.0,486.0],[206.0,488.0],[188.0,488.0],[184.0,486.0],[177.0,486.0],[165.0,478.0],[143.0,454.0],[151.0,452.0],[154.0,454.0],[162.0,453.0],[168.0,454.0],[179.0,451.0],[188.0,451.0],[190.0,444.0],[195.0,441.0],[221.0,442.0],[227.0,440.0],[233.0,442.0],[239.0,442.0],[243.0,448.0],[282.0,449.0],[240.0,449.0],[237.0,450.0],[236.0,453.0],[231.0,455.0],[224.0,455.0],[217.0,457.0],[193.0,457.0],[190.0,454.0],[189.0,450.0],[223.0,449.0],[224.0,448.0],[236.0,448.0],[237.0,449.0],[222.0,425.0],[212.0,426.0],[207.0,424.0],[193.0,423.0],[193.0,424.0],[189.0,424.0],[184.0,428.0],[175.0,439.0],[162.0,444.0],[161.0,444.0],[161.0,441.0],[154.0,447.0],[153.0,451.0],[160.0,444.0],[162.0,439.0],[171.0,431.0],[171.0,429.0],[179.0,418.0],[193.0,404.0],[197.0,402.0],[201.0,398.0],[202.0,395.0],[206.0,392.0],[211.0,380.0],[195.0,374.0],[191.0,370.0],[187.0,369.0],[185.0,365.0],[180.0,365.0],[178.0,362.0],[173.0,363.0],[174.0,368.0],[179.0,368.0],[180.0,366.0],[189.0,364.0],[194.0,373.0],[187.0,377.0],[177.0,377.0],[166.0,374.0],[159.0,367.0],[159.0,355.0],[163.0,348.0],[169.0,343.0],[172.0,331.0],[176.0,324.0],[176.0,321.0],[187.0,301.0],[177.0,283.0],[175.0,285.0],[165.0,286.0],[157.0,290.0],[129.0,295.0],[124.0,295.0],[111.0,291.0],[105.0,286.0],[105.0,280.0],[109.0,279.0],[103.0,268.0],[108.0,266.0],[112.0,262.0],[125.0,258.0],[125.0,257.0],[145.0,257.0],[150.0,258.0],[150.0,259.0],[160.0,259.0],[168.0,263.0],[176.0,270.0],[177.0,274.0],[174.0,274.0],[162.0,269.0],[145.0,266.0],[144.0,283.0],[140.0,285.0],[136.0,285.0],[133.0,282.0],[127.0,281.0],[125.0,278.0],[125.0,274.0],[134.0,282.0],[136.0,279.0],[144.0,277.0],[145.0,275.0],[144.0,266.0],[133.0,266.0],[129.0,268.0],[125.0,273.0],[121.0,272.0],[113.0,275.0],[110.0,279.0],[122.0,303.0],[117.0,303.0],[112.0,301.0],[103.0,290.0],[103.0,285.0],[104.0,285.0],[104.0,281.0],[102.0,279.0],[103.0,261.0],[111.0,250.0],[109.0,253.0],[113.0,249.0],[153.0,222.0],[154.0,230.0],[156.0,231.0],[160.0,239.0],[176.0,255.0],[177.0,258.0],[181.0,261.0],[181.0,263.0],[185.0,267.0],[186.0,273.0],[187.0,273.0],[187.0,280.0],[181.0,280.0],[178.0,275.0],[180.0,281.0],[178.0,283.0],[188.0,299.0],[188.0,296.0],[193.0,288.0],[194.0,282.0],[194.0,281.0],[188.0,281.0],[196.0,279.0],[198.0,270.0],[203.0,260.0],[235.0,250.0],[225.0,245.0],[214.0,245.0],[207.0,247.0],[205.0,249.0],[202.0,249.0],[200.0,245.0],[193.0,238.0],[183.0,233.0],[172.0,223.0],[158.0,220.0],[150.0,221.0],[147.0,219.0],[134.0,217.0],[113.0,217.0],[111.0,220.0],[103.0,220.0],[108.0,221.0],[105.0,224.0],[103.0,221.0],[101.0,222.0],[104.0,225.0],[102.0,228.0],[98.0,228.0],[100.0,223.0],[98.0,223.0],[97.0,228.0],[94.0,230.0],[93.0,233.0],[93.0,229.0],[89.0,228.0],[86.0,232.0],[81.0,234.0],[92.0,234.0],[88.0,233.0],[87.0,230.0],[89.0,222.0],[90.0,222.0],[92.0,206.0],[93.0,206.0],[94.0,199.0],[96.0,192.0],[97.0,192.0],[98.0,180.0],[99.0,180.0],[101.0,172.0],[104.0,170.0],[114.0,170.0],[114.0,169.0],[120.0,168.0],[147.0,170.0],[177.0,161.0],[195.0,161.0],[205.0,164.0],[226.0,165.0],[237.0,167.0],[272.0,167.0],[309.0,160.0],[318.0,218.0],[318.0,217.0],[308.0,217.0],[304.0,220.0],[305.0,223.0],[304.0,221.0],[298.0,221.0],[292.0,224.0],[280.0,225.0],[279.0,227.0],[275.0,228.0],[271.0,228.0],[269.0,226.0],[263.0,227.0],[249.0,240.0],[246.0,247.0],[246.0,250.0],[249.0,254.0],[236.0,250.0],[236.0,251.0],[240.0,252.0],[241.0,254.0],[247.0,257.0],[250.0,257.0],[250.0,255.0],[251.0,258.0],[266.0,266.0],[269.0,267.0],[279.0,266.0],[274.0,266.0],[274.0,260.0],[281.0,246.0],[292.0,236.0],[300.0,232.0],[309.0,230.0],[310.0,228.0],[306.0,224.0],[306.0,225.0],[309.0,225.0],[310.0,227.0],[318.0,226.0],[318.0,219.0],[319.0,226.0],[326.0,227.0],[333.0,227.0],[338.0,221.0],[353.0,220.0],[355.0,218.0],[361.0,219.0],[368.0,223.0],[368.0,227.0],[367.0,227.0],[372.0,234.0],[369.0,229.0],[364.0,227.0],[366.0,227.0],[363.0,222.0],[363.0,227.0],[357.0,227.0],[354.0,225.0],[352.0,221.0],[339.0,220.0],[331.0,217.0],[318.0,216.0],[329.0,163.0],[323.0,160.0],[310.0,159.0],[307.0,104.0],[313.0,104.0],[316.0,106.0],[320.0,106.0],[322.0,105.0],[323.0,102.0],[325.0,102.0],[322.0,101.0],[317.0,96.0],[311.0,96.0],[308.0,87.0],[308.0,81.0],[310.0,80.0],[316.0,80.0],[317.0,83.0],[317.0,80.0],[323.0,80.0],[324.0,86.0],[331.0,87.0],[318.0,87.0],[317.0,84.0],[316.0,87.0],[309.0,87.0],[310.0,97.0],[307.0,98.0],[306.0,103.0],[305.0,102.0],[304.0,103.0],[284.0,102.0],[281.0,104.0],[267.0,104.0],[266.0,101.0],[262.0,99.0],[261.0,101.0],[256.0,103.0],[253.0,106.0],[247.0,106.0],[244.0,104.0],[230.0,105.0],[230.0,106.0],[222.0,105.0],[210.0,106.0],[205.0,104.0],[195.0,107.0],[190.0,107.0],[189.0,104.0],[179.0,105.0],[188.0,105.0],[190.0,103.0],[190.0,104.0],[191.0,102.0],[190.0,92.0],[183.0,89.0],[182.0,77.0],[170.0,70.0],[170.0,66.0],[168.0,63.0],[165.0,62.0],[164.0,57.0],[164.0,62.0],[169.0,65.0],[169.0,63.0],[174.0,60.0],[174.0,54.0],[175.0,55.0],[184.0,54.0],[187.0,51.0],[187.0,46.0],[194.0,46.0],[198.0,45.0],[199.0,43.0],[199.0,50.0],[205.0,55.0],[211.0,55.0],[210.0,66.0],[205.0,70.0],[203.0,76.0],[188.0,74.0],[187.0,65.0],[189.0,64.0],[183.0,64.0],[181.0,62.0],[180.0,55.0],[184.0,55.0],[186.0,57.0],[186.0,65.0],[184.0,65.0],[176.0,73.0],[172.0,74.0],[171.0,83.0],[171.0,75.0],[169.0,75.0],[165.0,77.0],[160.0,84.0],[150.0,86.0],[160.0,85.0],[161.0,93.0],[162.0,86.0],[172.0,84.0],[176.0,89.0],[177.0,93.0],[177.0,90.0],[188.0,90.0],[190.0,86.0],[195.0,83.0],[200.0,83.0],[202.0,87.0],[211.0,87.0],[215.0,82.0],[220.0,81.0],[212.0,88.0],[218.0,90.0],[230.0,85.0],[227.0,82.0],[221.0,80.0],[223.0,80.0],[224.0,77.0],[229.0,73.0],[230.0,68.0],[233.0,67.0],[218.0,66.0],[218.0,57.0],[217.0,67.0],[216.0,67.0],[212.0,56.0],[217.0,54.0],[217.0,56.0],[218.0,52.0],[220.0,51.0],[217.0,41.0],[220.0,49.0],[231.0,47.0],[232.0,53.0],[235.0,56.0],[235.0,58.0],[232.0,46.0],[231.0,46.0],[238.0,41.0],[238.0,39.0],[246.0,40.0],[248.0,32.0],[251.0,32.0],[246.0,31.0],[244.0,28.0],[242.0,28.0],[239.0,31.0],[237.0,31.0],[237.0,38.0],[236.0,31.0],[231.0,31.0],[231.0,27.0],[230.0,31.0],[224.0,35.0],[216.0,35.0],[216.0,32.0],[216.0,40.0],[209.0,42.0],[207.0,42.0],[201.0,35.0],[200.0,42.0],[200.0,41.0],[206.0,42.0],[205.0,54.0],[203.0,54.0],[201.0,58.0],[190.0,63.0],[193.0,63.0],[196.0,60.0],[200.0,59.0],[204.0,63.0],[206.0,68.0],[211.0,68.0],[211.0,67.0],[215.0,68.0],[210.0,76.0],[201.0,77.0],[201.0,91.0],[191.0,91.0],[201.0,92.0],[201.0,94.0],[192.0,100.0],[197.0,100.0],[200.0,95.0],[202.0,95.0],[205.0,97.0],[207.0,103.0],[207.0,100.0],[212.0,100.0],[216.0,96.0],[216.0,93.0],[218.0,91.0],[229.0,90.0],[231.0,86.0],[246.0,85.0],[238.0,84.0],[238.0,83.0],[240.0,79.0],[247.0,76.0],[248.0,70.0],[249.0,79.0],[255.0,78.0],[250.0,79.0],[250.0,82.0],[247.0,84.0],[251.0,83.0],[257.0,88.0],[264.0,89.0],[263.0,89.0],[263.0,98.0],[265.0,90.0],[269.0,88.0],[284.0,90.0],[289.0,88.0],[307.0,86.0],[307.0,76.0],[309.0,65.0],[303.0,58.0],[303.0,61.0],[309.0,62.0],[310.0,64.0],[324.0,56.0],[331.0,54.0],[332.0,51.0],[331.0,43.0],[337.0,43.0],[337.0,42.0],[343.0,41.0],[343.0,30.0],[340.0,30.0],[337.0,28.0],[332.0,29.0],[327.0,28.0],[326.0,26.0],[328.0,22.0],[332.0,22.0],[334.0,27.0],[333.0,23.0],[340.0,23.0],[343.0,29.0],[345.0,27.0],[355.0,28.0],[359.0,30.0],[359.0,35.0],[357.0,36.0],[368.0,35.0],[373.0,39.0],[373.0,42.0],[367.0,45.0],[366.0,43.0],[356.0,43.0],[355.0,45.0],[344.0,41.0],[344.0,44.0],[347.0,47.0],[338.0,49.0],[336.0,51.0],[340.0,54.0],[333.0,52.0],[332.0,54.0],[333.0,63.0],[341.0,63.0],[336.0,64.0],[335.0,74.0],[331.0,75.0],[328.0,78.0],[323.0,79.0],[336.0,75.0],[338.0,77.0],[341.0,77.0],[346.0,83.0],[350.0,83.0],[350.0,91.0],[348.0,93.0],[340.0,93.0],[338.0,89.0],[332.0,88.0],[337.0,88.0],[337.0,86.0],[341.0,85.0],[345.0,82.0],[344.0,81.0],[347.0,80.0],[347.0,63.0],[351.0,61.0],[344.0,60.0],[342.0,62.0],[343.0,59.0],[341.0,54.0],[344.0,53.0],[346.0,48.0],[353.0,48.0],[354.0,46.0],[356.0,46.0],[356.0,48.0],[361.0,50.0],[355.0,50.0],[355.0,48.0],[353.0,49.0],[352.0,60.0],[365.0,59.0],[366.0,54.0],[362.0,51.0],[362.0,48.0],[366.0,48.0],[368.0,46.0],[371.0,46.0],[375.0,52.0],[386.0,52.0],[387.0,50.0],[392.0,50.0],[396.0,54.0],[396.0,56.0],[393.0,59.0],[395.0,61.0],[395.0,66.0],[391.0,66.0],[388.0,63.0],[387.0,59.0],[387.0,62.0],[382.0,65.0],[377.0,71.0],[378.0,73.0],[382.0,73.0],[380.0,83.0],[374.0,86.0],[371.0,90.0],[365.0,90.0],[364.0,89.0],[365.0,83.0],[370.0,78.0],[371.0,73.0],[372.0,73.0],[372.0,71.0],[369.0,71.0],[366.0,67.0],[366.0,59.0],[367.0,55.0],[371.0,55.0],[374.0,53.0],[372.0,48.0],[373.0,43.0],[378.0,43.0],[382.0,46.0],[382.0,52.0],[385.0,52.0],[386.0,58.0],[399.0,57.0],[405.0,59.0],[409.0,63.0],[410.0,66.0],[416.0,65.0],[400.0,59.0],[400.0,67.0],[397.0,68.0],[396.0,72.0],[396.0,67.0],[395.0,73.0],[389.0,76.0],[382.0,77.0],[380.0,74.0],[376.0,72.0],[367.0,72.0],[359.0,75.0],[354.0,81.0],[351.0,82.0],[351.0,88.0],[363.0,91.0],[363.0,102.0],[362.0,101.0],[359.0,106.0],[351.0,108.0],[351.0,109.0],[343.0,107.0],[341.0,108.0],[333.0,107.0],[331.0,104.0],[326.0,102.0],[328.0,102.0],[328.0,100.0],[331.0,98.0],[336.0,97.0],[344.0,100.0],[350.0,99.0],[361.0,100.0],[364.0,91.0],[380.0,92.0],[385.0,97.0],[389.0,97.0],[390.0,91.0],[394.0,88.0],[398.0,88.0],[399.0,91.0],[397.0,96.0],[401.0,97.0],[405.0,103.0],[405.0,101.0],[410.0,97.0],[413.0,97.0],[416.0,101.0],[416.0,106.0],[426.0,101.0],[430.0,101.0],[427.0,100.0],[428.0,91.0],[423.0,86.0],[422.0,81.0],[421.0,81.0],[422.0,87.0],[420.0,91.0],[414.0,96.0],[409.0,96.0],[407.0,89.0],[409.0,87.0],[409.0,83.0],[404.0,76.0],[404.0,78.0],[408.0,80.0],[409.0,82.0],[420.0,80.0],[419.0,80.0],[419.0,77.0],[423.0,75.0],[423.0,70.0],[424.0,75.0],[431.0,80.0],[431.0,83.0],[440.0,88.0],[440.0,93.0],[438.0,94.0],[443.0,96.0],[448.0,104.0],[431.0,102.0],[434.0,104.0],[434.0,110.0],[434.0,109.0],[425.0,109.0],[416.0,108.0],[416.0,107.0],[411.0,108.0],[411.0,115.0],[408.0,112.0],[408.0,109.0],[410.0,108.0],[406.0,108.0],[405.0,104.0],[405.0,107.0],[395.0,109.0],[396.0,96.0],[392.0,96.0],[385.0,99.0],[385.0,98.0],[383.0,101.0],[379.0,102.0],[386.0,100.0],[386.0,103.0],[392.0,111.0],[389.0,114.0],[383.0,114.0],[380.0,110.0],[378.0,113.0],[364.0,113.0],[361.0,112.0],[360.0,109.0],[360.0,106.0],[365.0,102.0],[379.0,103.0],[380.0,109.0],[391.0,108.0],[392.0,110.0],[395.0,110.0],[397.0,112.0],[400.0,118.0],[405.0,119.0],[405.0,120.0],[415.0,121.0],[418.0,125.0],[414.0,128.0],[414.0,131.0],[417.0,137.0],[423.0,139.0],[424.0,141.0],[433.0,143.0],[433.0,141.0],[436.0,139.0],[435.0,131.0],[433.0,128.0],[428.0,126.0],[434.0,120.0],[435.0,125.0],[444.0,126.0],[444.0,118.0],[454.0,118.0],[452.0,124.0],[452.0,134.0],[448.0,134.0],[445.0,128.0],[446.0,132.0],[442.0,134.0],[444.0,135.0],[441.0,133.0],[440.0,128.0],[445.0,127.0],[445.0,126.0],[458.0,126.0],[459.0,127.0],[458.0,134.0],[456.0,135.0],[458.0,140.0],[458.0,148.0],[454.0,151.0],[448.0,151.0],[447.0,156.0],[445.0,156.0],[444.0,158.0],[448.0,157.0],[451.0,160.0],[451.0,164.0],[445.0,160.0],[445.0,163.0],[447.0,165.0],[450.0,165.0],[452.0,168.0],[463.0,168.0],[468.0,166.0],[472.0,162.0],[474.0,162.0],[470.0,158.0],[465.0,158.0],[464.0,151.0],[462.0,149.0],[459.0,149.0],[484.0,152.0],[484.0,143.0],[478.0,138.0],[478.0,133.0],[484.0,136.0],[491.0,150.0],[493.0,157.0],[493.0,167.0],[496.0,169.0],[498.0,176.0],[499.0,186.0],[498.0,186.0],[497.0,194.0],[494.0,195.0],[485.0,189.0],[488.0,186.0],[488.0,178.0],[485.0,175.0],[482.0,175.0],[482.0,187.0],[479.0,187.0],[478.0,189.0],[460.0,190.0],[457.0,186.0],[451.0,186.0],[443.0,182.0],[443.0,177.0],[447.0,175.0],[454.0,176.0],[461.0,181.0],[475.0,184.0],[482.0,189.0],[484.0,189.0],[481.0,190.0],[481.0,192.0],[483.0,197.0],[486.0,199.0],[494.0,201.0],[496.0,196.0],[499.0,199.0],[499.0,202.0],[493.0,202.0],[492.0,209.0],[492.0,208.0],[502.0,209.0],[500.0,223.0],[502.0,225.0],[502.0,228.0],[505.0,229.0],[499.0,230.0],[498.0,232.0],[496.0,227.0],[491.0,222.0],[488.0,222.0],[488.0,217.0],[486.0,216.0],[483.0,216.0],[487.0,222.0],[479.0,224.0],[477.0,226.0],[478.0,229.0],[491.0,228.0],[492.0,225.0],[494.0,225.0],[492.0,223.0],[491.0,209.0],[484.0,210.0],[476.0,207.0],[472.0,201.0],[469.0,200.0],[466.0,201.0],[466.0,205.0],[469.0,208.0],[469.0,210.0],[480.0,214.0],[482.0,216.0],[482.0,223.0],[485.0,223.0],[487.0,225.0],[487.0,229.0],[490.0,229.0],[492.0,233.0],[492.0,248.0],[487.0,250.0],[486.0,254.0],[491.0,259.0],[492.0,264.0],[491.0,268.0],[498.0,286.0],[494.0,290.0],[493.0,294.0],[495.0,296.0],[498.0,296.0],[492.0,293.0],[485.0,293.0],[477.0,298.0],[469.0,319.0],[467.0,321.0],[465.0,335.0],[472.0,339.0],[470.0,342.0],[471.0,346.0],[475.0,346.0],[479.0,348.0],[485.0,354.0],[488.0,360.0],[489.0,372.0],[486.0,379.0],[493.0,345.0],[488.0,337.0],[486.0,330.0],[485.0,330.0],[488.0,333.0],[488.0,336.0],[484.0,335.0],[482.0,332.0],[478.0,332.0],[473.0,338.0],[479.0,331.0],[484.0,329.0],[485.0,326.0],[499.0,320.0],[503.0,321.0],[510.0,330.0],[511.0,335.0],[511.0,344.0],[509.0,348.0],[507.0,366.0],[505.0,371.0],[506.0,389.0],[504.0,391.0],[507.0,386.0],[509.0,386.0],[513.0,381.0],[513.0,377.0],[516.0,370.0],[517.0,353.0],[519.0,345.0],[519.0,334.0],[521.0,323.0],[523.0,319.0],[523.0,313.0],[521.0,309.0],[514.0,302.0],[508.0,299.0],[499.0,297.0],[500.0,297.0],[501.0,290.0],[499.0,286.0],[499.0,279.0],[502.0,260.0],[502.0,263.0],[492.0,262.0],[492.0,260.0],[495.0,257.0],[495.0,249.0],[493.0,246.0],[494.0,244.0],[498.0,243.0],[493.0,242.0],[493.0,233.0],[497.0,233.0],[500.0,237.0],[499.0,243.0],[504.0,253.0],[504.0,258.0],[503.0,259.0],[500.0,258.0],[500.0,253.0],[502.0,253.0],[506.0,247.0],[507.0,214.0],[505.0,208.0],[500.0,208.0],[500.0,203.0],[506.0,207.0],[506.0,200.0],[504.0,193.0],[503.0,193.0],[503.0,189.0],[500.0,186.0],[492.0,167.0],[485.0,167.0],[485.0,174.0],[481.0,175.0],[477.0,174.0],[474.0,170.0],[475.0,161.0],[479.0,160.0],[485.0,166.0],[490.0,158.0],[492.0,158.0],[488.0,155.0],[491.0,155.0],[484.0,153.0],[478.0,159.0],[473.0,152.0],[473.0,146.0],[460.0,143.0],[455.0,135.0],[445.0,136.0],[444.0,145.0],[447.0,150.0],[434.0,144.0],[436.0,156.0],[434.0,166.0],[431.0,172.0],[427.0,173.0],[424.0,171.0],[424.0,164.0],[425.0,164.0],[426.0,159.0],[421.0,154.0],[421.0,150.0],[424.0,143.0],[427.0,142.0],[423.0,138.0],[424.0,128.0],[419.0,126.0],[427.0,125.0],[428.0,120.0],[433.0,119.0],[434.0,111.0],[447.0,108.0],[448.0,105.0],[458.0,106.0],[464.0,115.0],[466.0,124.0],[470.0,124.0],[465.0,124.0],[464.0,126.0],[460.0,127.0],[463.0,127.0],[469.0,133.0],[474.0,135.0],[477.0,135.0],[478.0,132.0],[476.0,126.0],[471.0,125.0],[475.0,125.0],[474.0,119.0],[459.0,98.0],[444.0,83.0],[427.0,69.0],[424.0,69.0],[422.0,66.0],[417.0,65.0],[417.0,62.0],[415.0,59.0],[409.0,56.0],[403.0,50.0],[380.0,34.0],[352.0,20.0],[337.0,15.0],[331.0,15.0],[331.0,14.0],[321.0,12.0],[310.0,13.0],[308.0,11.0],[297.0,9.0],[285.0,9.0],[281.0,14.0],[277.0,14.0],[274.0,18.0],[271.0,19.0],[271.0,21.0],[267.0,20.0],[261.0,22.0],[259.0,26.0],[257.0,27.0],[256.0,31.0],[252.0,32.0],[256.0,32.0],[259.0,34.0],[257.0,34.0],[253.0,40.0],[247.0,40.0],[253.0,41.0],[254.0,45.0],[258.0,47.0],[256.0,47.0],[254.0,51.0],[252.0,52.0],[252.0,63.0],[250.0,68.0],[248.0,69.0],[245.0,66.0],[234.0,66.0],[235.0,61.0],[238.0,58.0],[252.0,57.0],[252.0,60.0],[255.0,60.0],[264.0,57.0],[268.0,53.0],[267.0,68.0],[262.0,72.0],[262.0,75.0],[256.0,77.0],[263.0,76.0],[263.0,78.0],[269.0,81.0],[269.0,87.0],[271.0,78.0],[274.0,77.0],[276.0,74.0],[279.0,72.0],[285.0,72.0],[288.0,66.0],[297.0,65.0],[302.0,61.0],[295.0,66.0],[293.0,71.0],[288.0,73.0],[291.0,78.0],[289.0,87.0],[289.0,83.0],[286.0,81.0],[286.0,75.0],[288.0,74.0],[278.0,71.0],[278.0,68.0],[268.0,68.0],[277.0,67.0],[282.0,64.0],[285.0,61.0],[288.0,53.0],[292.0,53.0],[296.0,51.0],[296.0,47.0],[290.0,42.0],[280.0,42.0],[278.0,38.0],[272.0,38.0],[271.0,40.0],[269.0,40.0],[271.0,41.0],[271.0,45.0],[273.0,47.0],[275.0,47.0],[277.0,44.0],[280.0,43.0],[287.0,52.0],[276.0,51.0],[274.0,48.0],[271.0,52.0],[266.0,52.0],[262.0,48.0],[259.0,47.0],[261.0,47.0],[263.0,43.0],[268.0,39.0],[268.0,34.0],[260.0,34.0],[267.0,31.0],[267.0,33.0],[270.0,33.0],[269.0,34.0],[273.0,32.0],[275.0,30.0],[268.0,30.0],[269.0,24.0],[270.0,22.0],[270.0,23.0],[277.0,23.0],[277.0,21.0],[277.0,29.0],[276.0,29.0],[282.0,34.0],[295.0,35.0],[298.0,31.0],[301.0,31.0],[303.0,41.0],[301.0,43.0],[300.0,48.0],[297.0,48.0],[297.0,51.0],[304.0,57.0],[313.0,51.0],[313.0,46.0],[311.0,44.0],[309.0,44.0],[306.0,47.0],[306.0,53.0],[301.0,48.0],[305.0,48.0],[304.0,40.0],[312.0,41.0],[310.0,41.0],[310.0,43.0],[313.0,42.0],[330.0,44.0],[320.0,42.0],[319.0,37.0],[314.0,38.0],[313.0,41.0],[320.0,35.0],[318.0,23.0],[316.0,23.0],[317.0,25.0],[318.0,21.0],[328.0,21.0],[327.0,19.0],[317.0,20.0],[313.0,14.0],[309.0,14.0],[306.0,17.0],[306.0,19.0],[303.0,19.0],[307.0,20.0],[309.0,24.0],[315.0,25.0],[310.0,25.0],[308.0,28.0],[304.0,30.0],[297.0,30.0],[295.0,28.0],[295.0,24.0],[299.0,19.0],[302.0,19.0],[298.0,18.0],[297.0,16.0],[288.0,16.0],[278.0,20.0],[280.0,18.0],[280.0,15.0],[274.0,11.0],[254.0,13.0],[253.0,14.0],[259.0,22.0],[252.0,15.0],[247.0,16.0],[242.0,19.0],[243.0,27.0],[241.0,20.0],[238.0,20.0],[233.0,21.0],[231.0,26.0],[231.0,23.0],[226.0,23.0],[216.0,27.0],[215.0,31.0],[214.0,28.0],[209.0,28.0],[201.0,32.0],[200.0,34.0],[189.0,36.0],[183.0,41.0],[186.0,46.0],[183.0,43.0],[178.0,44.0],[173.0,47.0],[172.0,50.0],[170.0,51.0],[173.0,53.0],[166.0,52.0],[163.0,56.0],[156.0,58.0],[152.0,64.0],[148.0,66.0],[153.0,65.0],[159.0,68.0],[160.0,71.0],[156.0,75.0],[153.0,75.0],[148.0,78.0],[150.0,76.0],[149.0,76.0],[146.0,67.0],[147.0,67.0],[144.0,70.0],[141.0,80.0],[145.0,82.0],[147.0,78.0],[146.0,83.0],[149.0,85.0],[149.0,95.0],[148.0,95.0],[151.0,95.0],[154.0,100.0],[155.0,97.0],[158.0,97.0],[164.0,93.0],[176.0,93.0],[177.0,104.0],[178.0,104.0],[175.0,107.0],[171.0,109.0],[159.0,108.0],[156.0,106.0],[155.0,101.0],[154.0,108.0],[146.0,113.0],[137.0,113.0],[134.0,111.0],[134.0,108.0],[133.0,112.0],[130.0,115.0],[122.0,118.0],[115.0,117.0],[114.0,111.0],[116.0,108.0],[124.0,105.0],[123.0,101.0],[124.0,101.0],[122.0,98.0],[124.0,91.0],[126.0,89.0],[130.0,90.0],[128.0,89.0],[129.0,86.0],[132.0,83.0],[139.0,80.0],[142.0,83.0],[143.0,82.0],[140.0,85.0],[140.0,91.0],[137.0,94.0],[133.0,94.0],[131.0,92.0],[137.0,95.0],[138.0,98.0],[147.0,96.0],[140.0,98.0],[137.0,104.0],[134.0,105.0],[134.0,107.0],[133.0,104.0],[122.0,103.0],[121.0,99.0],[117.0,100.0],[115.0,103.0],[115.0,109.0],[109.0,112.0],[104.0,119.0],[102.0,129.0],[96.0,138.0],[94.0,144.0],[94.0,150.0],[92.0,156.0],[85.0,170.0],[83.0,183.0],[78.0,199.0],[78.0,231.0],[80.0,233.0],[80.0,269.0],[78.0,284.0],[77.0,284.0],[77.0,300.0],[75.0,305.0],[75.0,316.0],[72.0,340.0],[73.0,348.0],[72.0,374.0],[73.0,384.0],[75.0,388.0],[79.0,412.0],[83.0,426.0],[84.0,440.0],[85.0,440.0],[89.0,470.0],[97.0,491.0],[109.0,512.0],[111.0,523.0],[113.0,523.0],[110.0,524.0],[110.0,536.0],[107.0,543.0],[105.0,555.0],[104.0,555.0],[102.0,564.0],[100.0,565.0],[96.0,574.0],[92.0,577.0],[87.0,578.0],[76.0,587.0],[77.0,586.0],[74.0,587.0],[51.0,603.0],[43.0,607.0],[16.0,628.0],[10.0,630.0],[87.0,638.0],[79.0,632.0],[76.0,626.0],[76.0,623.0],[78.0,619.0],[78.0,615.0],[85.0,604.0],[85.0,600.0],[91.0,592.0],[92.0,592.0],[90.0,606.0],[85.0,606.0],[90.0,618.0],[91.0,606.0],[93.0,606.0],[95.0,594.0],[93.0,592.0],[95.0,582.0],[95.0,576.0],[94.0,576.0],[114.0,524.0],[117.0,525.0],[127.0,538.0],[136.0,547.0],[144.0,552.0],[146.0,555.0],[165.0,567.0],[176.0,571.0],[193.0,581.0],[199.0,582.0],[200.0,586.0],[202.0,586.0],[203.0,588.0],[219.0,596.0],[229.0,605.0],[234.0,607.0],[238.0,611.0],[240.0,611.0],[254.0,622.0],[278.0,627.0],[285.0,626.0],[301.0,619.0],[311.0,611.0],[319.0,601.0],[338.0,583.0],[351.0,568.0],[353.0,565.0],[352.0,565.0],[355.0,563.0],[359.0,556.0],[371.0,544.0],[373.0,537.0],[378.0,532.0],[381.0,531.0],[402.0,510.0],[416.0,495.0],[429.0,478.0],[436.0,472.0],[433.0,474.0],[438.0,469.0],[445.0,447.0],[448.0,415.0],[454.0,400.0],[456.0,398.0],[448.0,434.0],[464.0,437.0],[463.0,452.0],[459.0,453.0],[459.0,461.0],[455.0,464.0],[455.0,527.0],[457.0,529.0],[456.0,607.0],[467.0,612.0],[476.0,621.0],[484.0,636.0],[452.0,637.0],[455.0,608.0]];
+
+var SHAPES = {
+  heart: function(){
+    return centerScale(sampleParam(function(t){
+      return [16*Math.pow(Math.sin(t),3),
+              -(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))];
+    }), 190);
+  },
+  star: function(){
+    var v=[];
+    for(var i=0;i<10;i++){
+      var R = (i%2===0)? 1: 0.42;
+      var a = -Math.PI/2 + i*Math.PI/5;
+      v.push([R*Math.cos(a), R*Math.sin(a)]);
+    }
+    return centerScale(samplePolyline(v), 190);
+  },
+  square: function(){
+    return centerScale(samplePolyline([[-1,-1],[1,-1],[1,1],[-1,1]]), 185);
+  },
+  infinity: function(){
+    return centerScale(sampleParam(function(t){
+      var d=1+Math.sin(t)*Math.sin(t);
+      return [Math.cos(t)/d, Math.sin(t)*Math.cos(t)/d];
+    }), 195);
+  },
+  rmit: function(){
+    return centerScale(samplePolyline(RMIT_VERTS), 185);
+  },
+  guesswho: function(){
+    return centerScale(samplePolyline(FACE_VERTS, 2048), 185);
+  }
+};
+
+function fft(re, im, inverse){
+  var L=re.length, i,j,k;
+  for(i=1,j=0;i<L;i++){
+    var bit=L>>1;
+    for(;j&bit;bit>>=1) j^=bit;
+    j^=bit;
+    if(i<j){var tmp=re[i];re[i]=re[j];re[j]=tmp;tmp=im[i];im[i]=im[j];im[j]=tmp;}
+  }
+  for(var len=2;len<=L;len*=2){
+    var angle=(inverse?2:-2)*Math.PI/len, wr0=Math.cos(angle), wi0=Math.sin(angle);
+    for(i=0;i<L;i+=len){
+      var wr=1,wi=0;
+      for(j=0;j<len/2;j++){
+        k=i+j;var q=k+len/2;
+        var vr=re[q]*wr-im[q]*wi,vi=re[q]*wi+im[q]*wr;
+        re[q]=re[k]-vr;im[q]=im[k]-vi;re[k]+=vr;im[k]+=vi;
+        var next=wr*wr0-wi*wi0;wi=wr*wi0+wi*wr0;wr=next;
+      }
+    }
+  }
+  if(inverse) for(i=0;i<L;i++){re[i]/=L;im[i]/=L;}
+}
+function dft(pts){
+  var L=pts.length,re=new Float64Array(L),im=new Float64Array(L),coefs=[];
+  for(var k=0;k<L;k++){re[k]=pts[k].x;im[k]=pts[k].y;}
+  fft(re,im,false);
+  for(k=0;k<L;k++){
+    var rr=re[k]/L,ii=im[k]/L;
+    coefs.push({n:k<L/2?k:k-L,re:rr,im:ii,r:Math.hypot(rr,ii),phase:Math.atan2(ii,rr)});
+  }
+  coefs.sort(function(a,b){return b.r-a.r;});
+  return coefs;
+}
+function errorsByN(coefs){
+  var errs=new Array(coefs.length+1),energy=0;
+  errs[coefs.length]=0;
+  for(var i=coefs.length-1;i>=0;i--){energy+=coefs[i].r*coefs[i].r;errs[i]=Math.sqrt(energy);}
+  return errs;
+}
+var shapeCache={};
+function prepareTrace(){
+  var L=16384,re=new Float64Array(L),im=new Float64Array(L);
+  for(var j=0;j<epi.N;j++){
+    var c=epi.coefs[j],k=(c.n+L)%L;re[k]=c.re*L;im[k]=c.im*L;
+  }
+  fft(re,im,true);
+  epi.traceX=re;epi.traceY=im;epi.trail=[];epi.t=0;epi.traceLayer=null;
+}
+var pendingTrace=false;
+function queueTrace(){
+  if(pendingTrace)return;pendingTrace=true;
+  requestAnimationFrame(function(){pendingTrace=false;prepareTrace();drawSpectrum();updateErr();});
+}
+
+// ---------- epicycle machine state ----------
+var epi = {
+  shape:'heart', pts:null, coefs:null, errs:null,
+  N:10, t:0, playing:true, trail:[], lastTs:null
+};
+var epiCv=document.getElementById('epi'), epiCtx=null;
+var specCv=document.getElementById('spec'), specCtx=null;
+
+function loadShape(name){
+  epi.shape=name;
+  epi.pts = SHAPES[name]();
+  if(!shapeCache[name]){
+    var cs=dft(epi.pts);shapeCache[name]={coefs:cs,errs:errorsByN(cs)};
+  }
+  epi.coefs=shapeCache[name].coefs;epi.errs=shapeCache[name].errs;
+  prepareTrace();
+  epi.trail=[]; epi.t=0;
+  document.querySelectorAll('.shapebtn').forEach(function(b){
+    b.style.borderColor = (b.getAttribute('data-shape')===name)? 'var(--gold)':'var(--line)';
+    b.style.color = (b.getAttribute('data-shape')===name)? 'var(--gold)':'var(--ink)';
+  });
+  drawSpectrum();
+  updateErr();
+}
+function updateErr(){
+  var e = epi.errs[Math.min(epi.N, epi.errs.length-1)];
+  document.getElementById('errStat').innerHTML =
+    'Using <b>'+epi.N+'</b> circle'+(epi.N>1?'s':'')+' &middot; RMS distance to target: <b>'+(e<0.1?e.toFixed(4):e.toFixed(1))+' px</b>'+
+    (e<2?' &middot; basically perfect':'');
+}
+function drawSpectrum(){
+  if(!specCtx) specCtx=fitCanvas(specCv);
+  var ctx=specCtx; ctx.clearRect(0,0,820,380);
+  var K=40, bw=820/K, maxR=0, i;
+  for(i=0;i<K;i++) maxR=Math.max(maxR, epi.coefs[i].r);
+  for(i=0;i<K;i++){
+    var c=epi.coefs[i];
+    var h = maxR>0 ? Math.sqrt(c.r/maxR)*300 : 0;
+    ctx.fillStyle = i<epi.N ? 'var(--gold)' : '#33333f';
+    ctx.fillStyle = i<epi.N ? '#e8c56b' : '#33333f';
+    ctx.fillRect(i*bw+2, 340-h, bw-4, h);
+  }
+  ctx.fillStyle='#a49c8c'; ctx.font='22px Georgia';
+  ctx.fillText('|c_n| (square-root scale), biggest 40 circles', 8, 26);
+}
+function drawEpi(ts){
+  if(!epiCtx) epiCtx=fitCanvas(epiCv);
+  var ctx=epiCtx;
+  // timing
+  if(epi.lastTs===null) epi.lastTs=ts;
+  var dt=Math.min((ts-epi.lastTs)/1000, 0.1); epi.lastTs=ts;
+  var speed=parseFloat(document.getElementById('speed').value)/100;
+  if(epi.playing){
+    var prev=epi.t;
+    epi.t += dt*speed*0.9; // revolutions ~0.9*speed per sec of phase 2pi
+    if(Math.floor(epi.t/(2*Math.PI)) !== Math.floor(prev/(2*Math.PI))) epi.trail=[];
+  }
+  ctx.clearRect(0,0,820,560);
+  var cx=410, cy=265;
+  var zoom=parseFloat(document.getElementById('zoom').value)/100;
+  var showC=document.getElementById('showCircles').checked;
+  var showT=document.getElementById('showTarget').checked;
+
+  // target
+  if(showT){
+    ctx.strokeStyle='#3d6b52'; ctx.lineWidth=2; ctx.beginPath();
+    for(var i=0;i<=epi.pts.length;i++){
+      var p=epi.pts[i%epi.pts.length];
+      var X=cx+p.x*zoom, Y=cy+p.y*zoom;
+      if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+    }
+    ctx.stroke();
+  }
+  var x=0,y=0,circlePath=showC?new Path2D():null,armPath=showC?new Path2D():null;
+  for(var j=0;j<epi.N;j++){
+    var c=epi.coefs[j],a=c.n*epi.t+c.phase;
+    var nx=x+c.r*Math.cos(a),ny=y+c.r*Math.sin(a);
+    if(showC && c.r*zoom*epiCv.width/820>=0.5){
+      circlePath.moveTo(cx+(x+c.r)*zoom,cy+y*zoom);
+      circlePath.arc(cx+x*zoom,cy+y*zoom,c.r*zoom,0,2*Math.PI);
+      armPath.moveTo(cx+x*zoom,cy+y*zoom);armPath.lineTo(cx+nx*zoom,cy+ny*zoom);
+    }
+    x=nx;y=ny;
+  }
+  if(showC){
+    ctx.strokeStyle='rgba(240,163,94,0.55)';ctx.lineWidth=1.2;ctx.stroke(circlePath);
+    ctx.strokeStyle='#f0a35e';ctx.lineWidth=1.8;ctx.stroke(armPath);
+  }
+  var tipX=cx+x*zoom,tipY=cy+y*zoom;
+  var fraction=(epi.t%(2*Math.PI))/(2*Math.PI),last=Math.floor(fraction*epi.traceX.length);
+  if(!epi.traceLayer || epi.traceLayer.width!==epiCv.width || epi.traceZoom!==zoom || last<epi.traceLast){
+    epi.traceLayer=document.createElement('canvas');epi.traceLayer.width=epiCv.width;epi.traceLayer.height=epiCv.height;
+    epi.traceZoom=zoom;epi.traceLast=0;
+    var tc=epi.traceLayer.getContext('2d');
+    tc.setTransform(epiCv.width/820,0,0,epiCv.width/820,0,0);
+    tc.strokeStyle='#ff4d5e';tc.lineWidth=2.6;tc.lineCap='round';tc.lineJoin='round';
+  }
+  if(last>epi.traceLast){
+    var tc=epi.traceLayer.getContext('2d');tc.beginPath();
+    tc.moveTo(cx+epi.traceX[epi.traceLast]*zoom,cy+epi.traceY[epi.traceLast]*zoom);
+    for(var q=epi.traceLast+1;q<=last;q++)tc.lineTo(cx+epi.traceX[q]*zoom,cy+epi.traceY[q]*zoom);
+    tc.stroke();epi.traceLast=last;
+  }
+  ctx.drawImage(epi.traceLayer,0,0,820,560);
+  // pen
+  ctx.fillStyle='#ff4d5e';
+  ctx.beginPath(); ctx.arc(tipX, tipY, 6, 0, 2*Math.PI); ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(tipX, tipY, 2, 0, 2*Math.PI); ctx.fill();
+}
+
+// ---------- waves section ----------
+var WAVES = {
+  square:{ label:'Square wave', terms:function(K){ var a=[]; for(var k=0;k<K;k++){ var n=2*k+1; a.push({n:n, amp:4/(Math.PI*n)}); } return a; },
+    target:function(t){ return Math.sin(t)>=0?1:-1; }, jump:true },
+  sawtooth:{ label:'Sawtooth', terms:function(K){ var a=[]; for(var k=1;k<=K;k++){ a.push({n:k, amp:2/(Math.PI*k)*((k%2)?1:-1)}); } return a; },
+    target:function(t){ var u=((t%(2*Math.PI))+2*Math.PI)%(2*Math.PI); return (u/Math.PI)-1; }, jump:true },
+  triangle:{ label:'Triangle', terms:function(K){ var a=[]; for(var k=0;k<K;k++){ var n=2*k+1; a.push({n:n, amp:8/(Math.PI*Math.PI)*((k%2)?-1:1)/(n*n)}); } return a; },
+    target:function(t){ var u=((t%(2*Math.PI))+2*Math.PI)%(2*Math.PI); return u<Math.PI? (2*u/Math.PI-1) : (3-2*u/Math.PI); }, jump:false }
+};
+var wave={ name:'square', K:3, t:0, hist:[], lastTs:null };
+var waveCv=document.getElementById('wave'), waveCtx=null;
+
+function waveValue(name, K, t){
+  var terms=WAVES[name].terms(K), s=0;
+  for(var i=0;i<terms.length;i++){ var tr=terms[i]; s += tr.amp*Math.sin(tr.n*t); }
+  return s;
+}
+function updateGibbs(){
+  var w=WAVES[wave.name], s;
+  if(w.jump){
+    // measure overshoot of partial sum on a fine grid
+    var max=-1e9, i;
+    for(i=0;i<2000;i++){ var t=Math.PI*i/2000; var v=waveValue(wave.name, wave.K, t); if(v>max) max=v; }
+    s='Overshoot above the jump: <b>'+((max-1)*100/2).toFixed(1)+'%</b> of the jump (Gibbs limit &asymp; 8.9%). Terms: <b>'+wave.K+'</b>.';
+  } else {
+    var e=0, i2;
+    for(i2=0;i2<720;i2++){ var t2=2*Math.PI*i2/720; var d=waveValue(wave.name,wave.K,t2)-w.target(t2); e+=d*d; }
+    e=Math.sqrt(e/720);
+    s='Smooth target: no Gibbs ears. RMS error with <b>'+wave.K+'</b> term'+(wave.K>1?'s':'')+': <b>'+e.toFixed(4)+'</b>.';
+  }
+  document.getElementById('gibbsStat').innerHTML=s;
+}
+function drawWave(ts){
+  if(!waveCtx) waveCtx=fitCanvas(waveCv);
+  var ctx=waveCtx;
+  if(wave.lastTs===null) wave.lastTs=ts;
+  var dt=Math.min((ts-wave.lastTs)/1000,0.1); wave.lastTs=ts;
+  var speed=parseFloat(document.getElementById('wspeed').value)/100;
+  wave.t += dt*speed*1.4;
+  ctx.clearRect(0,0,820,380);
+
+  var cy=190, cx0=170, ampPx=95;
+  var terms=WAVES[wave.name].terms(wave.K);
+
+  // phasor chain
+  var x=0,y=0,i;
+  for(i=0;i<terms.length;i++){
+    var tr=terms[i];
+    var r=Math.abs(tr.amp)*ampPx, ph=tr.amp<0?Math.PI:0;
+    var a=tr.n*wave.t+ph;
+    var ny=y+r*Math.sin(a)*-1; // screen y down; use -sin to match target orientation
+    ny=y - r*Math.sin(a);
+    ctx.strokeStyle='rgba(240,163,94,0.5)'; ctx.lineWidth=1.1;
+    ctx.beginPath(); ctx.arc(cx0+x, cy+y, Math.abs(r), 0, 2*Math.PI); ctx.stroke();
+    ctx.strokeStyle='#f0a35e'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(cx0+x, cy+y); ctx.lineTo(cx0+x, cy+ny); ctx.stroke();
+    y=ny;
+  }
+  var tipY=cy+y;
+  // wave area
+  var wx0=360, wx1=800;
+  // target wave (dashed)
+  ctx.strokeStyle='#3d6b52'; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.beginPath();
+  for(i=0;i<=200;i++){
+    var tt=wave.t - (i/200)*(2*Math.PI*1.6);
+    var X=wx1-(i/200)*(wx1-wx0);
+    var Y=cy - WAVES[wave.name].target(tt)*ampPx;
+    if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+  // history
+  wave.hist.push(y/ampPx);
+  if(wave.hist.length>440) wave.hist.shift();
+  ctx.strokeStyle='#7cc7ff'; ctx.lineWidth=2.4; ctx.beginPath();
+  for(i=0;i<wave.hist.length;i++){
+    var X2=wx1 - i*(wx1-wx0)/440;
+    var Y2=cy - wave.hist[wave.hist.length-1-i]*ampPx;
+    if(i===0) ctx.moveTo(X2,Y2); else ctx.lineTo(X2,Y2);
+  }
+  ctx.stroke();
+  // connector
+  ctx.strokeStyle='rgba(255,77,94,0.7)'; ctx.setLineDash([4,4]); ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(cx0, tipY); ctx.lineTo(wx1, tipY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#ff4d5e';
+  ctx.beginPath(); ctx.arc(cx0, tipY, 5.5, 0, 2*Math.PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(wx1, tipY, 5.5, 0, 2*Math.PI); ctx.fill();
+  // axis
+  ctx.strokeStyle='#2a2a38'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(wx0, cy); ctx.lineTo(wx1, cy); ctx.stroke();
+}
+
+// ---------- main loop ----------
+function frame(ts){
+  drawEpi(ts);
+  drawWave(ts);
+  requestAnimationFrame(frame);
+}
+
+// ---------- controls ----------
+document.querySelectorAll('.shapebtn').forEach(function(b){
+  b.addEventListener('click', function(){ loadShape(b.getAttribute('data-shape')); });
+});
+document.querySelectorAll('.wavebtn').forEach(function(b){
+  b.addEventListener('click', function(){
+    wave.name=b.getAttribute('data-wave'); wave.hist=[];
+    document.querySelectorAll('.wavebtn').forEach(function(x){
+      x.style.borderColor=(x===b)?'var(--gold)':'var(--line)';
+      x.style.color=(x===b)?'var(--gold)':'var(--ink)';
+    });
+    updateGibbs();
+  });
+});
+document.getElementById('nCircles').addEventListener('input', function(){
+  epi.N=parseInt(this.value,10);
+  document.getElementById('nCirclesVal').textContent=epi.N;
+  queueTrace();
+});
+document.getElementById('speed').addEventListener('input', function(){
+  document.getElementById('speedVal').textContent=(this.value/100).toFixed(2)+'x';
+});
+document.getElementById('zoom').addEventListener('input', function(){
+  document.getElementById('zoomVal').textContent=this.value+'%';
+});
+document.getElementById('playBtn').addEventListener('click', function(){
+  epi.playing=!epi.playing; this.textContent=epi.playing?'Pause':'Play';
+});
+document.getElementById('nTerms').addEventListener('input', function(){
+  wave.K=parseInt(this.value,10);
+  document.getElementById('nTermsVal').textContent=wave.K;
+  updateGibbs();
+});
+document.getElementById('wspeed').addEventListener('input', function(){
+  document.getElementById('wspeedVal').textContent=(this.value/100).toFixed(2)+'x';
+});
+window.addEventListener('resize', function(){ epiCtx=null; specCtx=null; waveCtx=null; drawSpectrum(); });
+
+// ---------- upbeat music (Web Audio, synthesized, ON by default, one tune per shape) ----------
+var music = { on:true, started:false, ctx:null, master:null, timer:null, nextTime:0, step:0 };
+// Each shape gets its own tune: bpm, chord roots (midi) per bar, and an 8-bar melody of 8th notes (0 = rest).
+var SONGS = {
+  heart: { bpm:132, roots:[48,48,43,43,45,45,41,41], // C G Am F
+    mel:[ [72,76,79,76,72,76,79,84], [84,79,76,79,84,86,84,79],
+          [74,79,83,79,74,79,83,86], [86,83,79,83,86,88,86,83],
+          [76,81,84,81,76,81,84,88], [88,84,81,84,88,91,88,84],
+          [77,81,84,81,77,81,84,89], [89,84,81,84,89,91,88,0] ] },
+  star: { bpm:140, roots:[50,50,47,47,43,43,45,45], // D Bm G A, bright
+    mel:[ [74,78,81,78,74,78,81,86], [86,81,78,81,74,0,74,78],
+          [83,78,74,78,83,86,83,78], [74,78,83,78,74,0,71,74],
+          [79,83,86,83,79,83,79,74], [74,79,83,79,74,78,79,81],
+          [81,85,88,85,81,85,81,76], [88,85,81,85,86,0,86,88] ] },
+  square: { bpm:128, roots:[45,45,41,41,43,43,40,40], // Am F G E, punchy
+    mel:[ [69,72,76,72,69,0,69,72], [76,72,69,72,76,81,76,72],
+          [72,77,81,77,72,0,72,77], [81,77,72,77,81,84,81,77],
+          [74,79,83,79,74,0,74,79], [83,79,74,79,83,86,83,79],
+          [76,80,83,80,76,0,76,80], [83,80,76,80,81,0,76,0] ] },
+  infinity: { bpm:124, roots:[41,41,36,36,38,38,34,34], // F C Dm Bb, flowing
+    mel:[ [77,81,84,81,77,81,84,89], [84,81,77,81,84,89,84,81],
+          [79,84,88,84,79,84,79,76], [76,79,84,79,76,79,76,72],
+          [74,77,81,77,74,77,81,86], [81,77,74,77,81,86,81,77],
+          [82,86,89,86,82,86,82,77], [89,86,82,86,89,91,89,86] ] },
+  guesswho: { bpm:138, roots:[40,40,37,37,45,45,47,47], // E C#m A B, driving chant
+    mel:[ [76,79,83,79,76,79,83,88], [88,83,79,83,88,92,88,83],
+          [73,76,80,76,73,76,80,85], [85,80,76,80,85,88,85,80],
+          [76,80,85,80,76,80,85,88], [88,85,80,85,88,92,88,85],
+          [78,82,87,82,78,82,87,90], [90,87,82,87,90,92,90,0] ] },
+  rmit: { bpm:136, roots:[43,43,36,36,38,38,40,38], // G C D Em D, anthem
+    mel:[ [67,71,74,79,74,71,74,79], [79,74,71,74,79,83,79,74],
+          [72,76,79,84,79,76,79,84], [84,79,76,79,84,88,84,79],
+          [74,78,81,86,81,78,81,86], [86,81,78,81,86,90,86,81],
+          [76,79,83,88,83,79,83,88], [86,83,81,83,86,88,86,83] ] }
+};
+function currentSong(){ return SONGS[epi.shape] || SONGS.heart; }
+function midiHz(m){ return 440*Math.pow(2,(m-69)/12); }
+function ensureAudio(){
+  if(music.ctx) return true;
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return false;
+  music.ctx = new AC();
+  music.master = music.ctx.createGain();
+  music.master.gain.value = 0.5;
+  var comp = music.ctx.createDynamicsCompressor();
+  music.master.connect(comp); comp.connect(music.ctx.destination);
+  return true;
+}
+function note(freq, t, dur, type, vol, dest){
+  var o=music.ctx.createOscillator(), g=music.ctx.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+  o.connect(g); g.connect(dest);
+  o.start(t); o.stop(t+dur+0.05);
+}
+function kick(t){
+  var o=music.ctx.createOscillator(), g=music.ctx.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(150, t);
+  o.frequency.exponentialRampToValueAtTime(48, t+0.11);
+  g.gain.setValueAtTime(0.55, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t+0.16);
+  o.connect(g); g.connect(music.master);
+  o.start(t); o.stop(t+0.2);
+}
+function hat(t){
+  var len=0.05, buf=music.ctx.createBuffer(1, Math.ceil(music.ctx.sampleRate*len), music.ctx.sampleRate);
+  var d=buf.getChannelData(0);
+  for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+  var src=music.ctx.createBufferSource(); src.buffer=buf;
+  var hp=music.ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7000;
+  var g=music.ctx.createGain(); g.gain.setValueAtTime(0.18, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t+len);
+  src.connect(hp); hp.connect(g); g.connect(music.master);
+  src.start(t);
+}
+function scheduleStep(step, t){
+  var song = currentSong();
+  var eighth = 60/song.bpm/2;
+  var bar = Math.floor(step/8) % 8, pos = step % 8;
+  var m = song.mel[bar][pos];
+  if(m>0) note(midiHz(m), t, eighth*0.95, 'square', 0.10, music.master);
+  if(m>0) note(midiHz(m)*2, t, eighth*0.5, 'triangle', 0.03, music.master); // sparkle octave
+  if(pos%2===0) kick(t);                       // four-on-the-floor
+  else hat(t);                                  // offbeat hats
+  var root = song.roots[bar]-12;
+  var bm = (pos===3||pos===6) ? root+12 : root;
+  note(midiHz(bm), t, eighth*0.9, 'triangle', 0.16, music.master);
+}
+function musicTick(){
+  var eighth = 60/currentSong().bpm/2;
+  while(music.nextTime < music.ctx.currentTime + 0.12){
+    scheduleStep(music.step, music.nextTime);
+    music.nextTime += eighth;
+    music.step = (music.step+1) % 64;
+  }
+}
+function setMusicBtn(){
+  var b=document.getElementById('musicBtn');
+  if(music.on){
+    b.innerHTML='\u266b Music: on';
+    b.setAttribute('aria-pressed','true');
+    b.style.borderColor='var(--gold)'; b.style.color='var(--gold)';
+  } else {
+    b.innerHTML='\u266a Music: off';
+    b.setAttribute('aria-pressed','false');
+    b.style.borderColor='var(--line)'; b.style.color='var(--ink)';
+  }
+}
+function startMusic(){
+  if(music.started) return;
+  if(!ensureAudio()){
+    music.on=false;
+    var b=document.getElementById('musicBtn');
+    b.innerHTML='\u266a Music: not supported'; b.disabled=true;
+    return;
+  }
+  music.ctx.resume().then(function(){
+    if(music.started) return;
+    music.started=true;
+    music.step=0;
+    music.nextTime=music.ctx.currentTime+0.06;
+    music.timer=setInterval(musicTick, 25);
+    setMusicBtn();
+  });
+}
+function stopMusic(){
+  music.started=false;
+  if(music.timer) clearInterval(music.timer);
+  if(music.ctx) music.ctx.suspend();
+  setMusicBtn();
+}
+document.getElementById('musicBtn').addEventListener('click', function(){
+  music.on = !music.on;
+  if(music.on) startMusic(); else stopMusic();
+});
+// Browsers and phones block sound before the first touch: the first tap/click/key
+// anywhere on the page is what actually starts the (default-on) music.
+function unlockAudio(){ if(music.on && !music.started) startMusic(); }
+['pointerdown','touchstart','click','keydown'].forEach(function(ev){
+  window.addEventListener(ev, unlockAudio, {passive:true});
+});
+// Restart the phrase when the shape changes so each tune starts from bar 1.
+var origLoadShape = loadShape;
+loadShape = function(name){
+  origLoadShape(name);
+  if(music.on && music.started){
+    music.step=0;
+    music.nextTime=music.ctx.currentTime+0.05;
+  }
+};
+
+// ---------- init ----------
+document.getElementById('nCirclesVal').textContent='10';
+document.getElementById('speedVal').textContent='1.00x';
+document.getElementById('zoomVal').textContent='100%';
+document.getElementById('nTermsVal').textContent='3';
+document.getElementById('wspeedVal').textContent='1.00x';
+document.querySelector('.wavebtn').style.borderColor='var(--gold)';
+document.querySelector('.wavebtn').style.color='var(--gold)';
+loadShape('heart');
+updateGibbs();
+setMusicBtn();
+startMusic(); // succeeds immediately where autoplay is allowed; otherwise the first tap unlocks it
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
