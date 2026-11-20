@@ -10,6 +10,15 @@
     --bg:#0b0b10; --panel:#15151d; --panel2:#1c1c26; --ink:#ece7da; --dim:#a49c8c;
     --gold:#e8c56b; --circle:#f0a35e; --tip:#ff4d5e; --trace:#ff4d5e; --target:#3d6b52;
     --accent:#7cc7ff; --line:#2a2a38;
+    --canvasbg:#08080d; --baroff:#33333f; --pendot:#ffffff; --axis:#2a2a38;
+    --noticebg:#3a2a12; --noticeline:#7a5a1e; --noticeink:#ffd98a; --btnactive:#262635;
+  }
+  body.light{
+    --bg:#f6f3ec; --panel:#ffffff; --panel2:#efe9dc; --ink:#26241e; --dim:#6f6858;
+    --gold:#8a6a14; --circle:#c96f1e; --tip:#d92843; --trace:#d92843; --target:#2e6e4b;
+    --accent:#1668b4; --line:#d8d1c0;
+    --canvasbg:#fbfaf6; --baroff:#cfc8b6; --pendot:#26241e; --axis:#c9c2b0;
+    --noticebg:#fdf3d7; --noticeline:#e0c078; --noticeink:#7a5a10; --btnactive:#e2dccb;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -29,7 +38,7 @@
   p{margin:8px 0}
   .eq{text-align:center;margin:12px 0;font-family:Georgia,serif;font-size:17px;overflow-x:auto;padding:4px 0}
   .eq .katex{font-size:1.05em}
-  canvas{display:block;width:100%;border-radius:10px;background:#08080d;border:1px solid var(--line);
+  canvas{display:block;width:100%;border-radius:10px;background:var(--canvasbg);border:1px solid var(--line);
          touch-action:manipulation}
   .controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:12px 0 4px}
   .ctl{display:flex;flex-direction:column;gap:2px;min-width:120px;flex:1}
@@ -39,7 +48,7 @@
   select,button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);
     border-radius:9px;padding:9px 12px;font-size:14px;min-height:44px}
   button{cursor:pointer}
-  button:active{background:#262635}
+  button:active{background:var(--btnactive)}
   .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
   .btnrow button{flex:0 0 auto}
   .chk{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--dim);min-height:44px}
@@ -52,17 +61,24 @@
   .caption{font-size:12.5px;color:var(--dim);margin-top:6px}
   ul{padding-left:20px;margin:8px 0}
   li{margin:5px 0}
-  .notice{background:#3a2a12;border:1px solid #7a5a1e;color:#ffd98a;border-radius:10px;
+  .notice{background:var(--noticebg);border:1px solid var(--noticeline);color:var(--noticeink);border-radius:10px;
           padding:10px 14px;font-size:14px;margin:14px 0}
   .footer{text-align:center;color:var(--dim);font-size:13px;margin-top:26px}
   .footer b{color:var(--gold)}
   a{color:var(--accent)}
   .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--dim);margin:6px 0 0}
   .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .themerow{display:flex;justify-content:flex-end;margin-top:14px}
+  .themebtn{display:inline-flex;align-items:center;gap:7px}
+  .footrow{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:26px}
+  .sitestats{font-size:.8rem;color:var(--dim);text-align:left;line-height:1.5;font-variant-numeric:tabular-nums}
+  .footrow .footer{margin-top:0;text-align:right}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+<div class="themerow"><button type="button" class="themebtn" id="themeToggle" aria-label="Switch between dark and light mode">Light mode</button></div>
 
 <h1>Circles Can Draw Anything</h1>
 <p class="sub">Fourier series: any shape, rebuilt from spinning circles</p>
@@ -243,7 +259,13 @@ It only gets squeezed thinner. Smooth waves (triangle) converge nicely; jumps ne
 </ul>
 </section>
 
+<div class="footrow">
+<div class="sitestats">
+<div>Number of visits: <span id="visitCount">&ndash;</span></div>
+<div>Time on site: <span id="timeOnSite">00:00</span></div>
+</div>
 <div class="footer">Developed by <b>SonDaoVT, PhD</b> &middot; interactive Fourier series explainer</div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
@@ -259,6 +281,29 @@ document.getElementById('jsnotice').style.display='none';
       try{ katex.render(el.getAttribute('data-tex'), el, {throwOnError:false}); }catch(e){}
     });
   }
+})();
+
+// ---------- theme ----------
+var TC={gold:'#e8c56b',barOff:'#33333f',dim:'#a49c8c',penDot:'#ffffff',axis:'#2a2a38',accent:'#7cc7ff'};
+function readThemeColors(){
+  var cs=getComputedStyle(document.body);
+  function v(name,fb){ var x=cs.getPropertyValue(name).trim(); return x||fb; }
+  TC.gold=v('--gold',TC.gold); TC.barOff=v('--baroff',TC.barOff); TC.dim=v('--dim',TC.dim);
+  TC.penDot=v('--pendot',TC.penDot); TC.axis=v('--axis',TC.axis); TC.accent=v('--accent',TC.accent);
+}
+(function initTheme(){
+  var mode='dark';
+  try{ mode=localStorage.getItem('fourier-theme')||'dark'; }catch(e){}
+  if(mode==='light') document.body.classList.add('light');
+  readThemeColors();
+  var btn=document.getElementById('themeToggle');
+  function label(){ btn.textContent=document.body.classList.contains('light')?'Dark mode':'Light mode'; }
+  label();
+  btn.addEventListener('click',function(){
+    document.body.classList.toggle('light');
+    try{ localStorage.setItem('fourier-theme',document.body.classList.contains('light')?'light':'dark'); }catch(e){}
+    readThemeColors(); label(); drawSpectrum();
+  });
 })();
 
 // ---------- helpers ----------
@@ -440,11 +485,10 @@ function drawSpectrum(){
   for(i=0;i<K;i++){
     var c=epi.coefs[i];
     var h = maxR>0 ? Math.sqrt(c.r/maxR)*300 : 0;
-    ctx.fillStyle = i<epi.N ? 'var(--gold)' : '#33333f';
-    ctx.fillStyle = i<epi.N ? '#e8c56b' : '#33333f';
+    ctx.fillStyle = i<epi.N ? TC.gold : TC.barOff;
     ctx.fillRect(i*bw+2, 340-h, bw-4, h);
   }
-  ctx.fillStyle='#a49c8c'; ctx.font='22px Georgia';
+  ctx.fillStyle=TC.dim; ctx.font='22px Georgia';
   ctx.fillText('|c_n| (square-root scale), biggest 40 circles', 8, 26);
 }
 function drawEpi(ts){
@@ -509,7 +553,7 @@ function drawEpi(ts){
   // pen
   ctx.fillStyle='#ff4d5e';
   ctx.beginPath(); ctx.arc(tipX, tipY, 6, 0, 2*Math.PI); ctx.fill();
-  ctx.fillStyle='#fff';
+  ctx.fillStyle=TC.penDot;
   ctx.beginPath(); ctx.arc(tipX, tipY, 2, 0, 2*Math.PI); ctx.fill();
 }
 
@@ -586,7 +630,7 @@ function drawWave(ts){
   // history
   wave.hist.push(y/ampPx);
   if(wave.hist.length>440) wave.hist.shift();
-  ctx.strokeStyle='#7cc7ff'; ctx.lineWidth=2.4; ctx.beginPath();
+  ctx.strokeStyle=TC.accent; ctx.lineWidth=2.4; ctx.beginPath();
   for(i=0;i<wave.hist.length;i++){
     var X2=wx1 - i*(wx1-wx0)/440;
     var Y2=cy - wave.hist[wave.hist.length-1-i]*ampPx;
@@ -600,7 +644,7 @@ function drawWave(ts){
   ctx.beginPath(); ctx.arc(cx0, tipY, 5.5, 0, 2*Math.PI); ctx.fill();
   ctx.beginPath(); ctx.arc(wx1, tipY, 5.5, 0, 2*Math.PI); ctx.fill();
   // axis
-  ctx.strokeStyle='#2a2a38'; ctx.lineWidth=1;
+  ctx.strokeStyle=TC.axis; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(wx0, cy); ctx.lineTo(wx1, cy); ctx.stroke();
 }
 
@@ -817,5 +861,104 @@ setMusicBtn();
 startMusic(); // succeeds immediately where autoplay is allowed; otherwise the first tap unlocks it
 requestAnimationFrame(frame);
 </script>
+<script>
+/* Site stats: GLOBAL totals shared by all visitors, via the free Count API
+   (https://countapi.mileshilliard.com - no API key, CORS-enabled).
+   Visits: one hit per browser session (sessionStorage guard).
+   Time: 1 tick = 15s of accumulated visitor time; heartbeat flushes while
+   visible plus a keepalive flush on hide/close. Display = server ticks x
+   15s plus this session's not-yet-sent time. */
+(function(){
+  var API='https://countapi.mileshilliard.com/api/v1';
+  var VISITS_KEY='sondaorm-fourier-epicycles-visits';
+  var TICKS_KEY='sondaorm-fourier-epicycles-time-15s';
+  var SESSION_FLAG='gstats_fourier_counted';
+  var TICK_S=15;
+  var countEl=document.getElementById('visitCount');
+  var timeEl=document.getElementById('timeOnSite');
+  var baseTicks=null, pendingMs=0, sending=false;
+  var visStart=(document.visibilityState!=='hidden')?Date.now():null;
+
+  function fmt(sec){
+    sec=Math.floor(sec);
+    if(sec<60) return sec+'s';
+    var m=Math.floor(sec/60), s=sec%60;
+    if(m<60) return m+'m '+s+'s';
+    var h=Math.floor(m/60); m=m%60;
+    if(h<24) return h+'h '+m+'m';
+    var d=Math.floor(h/24); h=h%24;
+    return d+'d '+h+'h';
+  }
+  function pending(now){ return pendingMs+(visStart!==null?now-visStart:0); }
+  function render(){
+    var shown=pending(Date.now())/1000;
+    if(baseTicks!==null) shown+=baseTicks*TICK_S;
+    timeEl.textContent=fmt(shown);
+  }
+  function api(path,keepalive){
+    // Retries with backoff (except keepalive calls during unload).
+    var maxAttempts=keepalive?1:5;
+    return new Promise(function(resolve,reject){
+      var attempt=0;
+      function go(){
+        fetch(API+path, keepalive?{method:'GET',keepalive:true}:{method:'GET'})
+          .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+          .then(function(j){ j.value=parseInt(j.value,10)||0; resolve(j); })
+          .catch(function(e){
+            attempt++;
+            if(attempt>=maxAttempts) reject(e);
+            else setTimeout(go,3000*attempt);
+          });
+      }
+      go();
+    });
+  }
+
+  // Visits: count once per session, always show the current global total.
+  var isNewSession=true;
+  try{
+    if(sessionStorage.getItem(SESSION_FLAG)) isNewSession=false;
+    else sessionStorage.setItem(SESSION_FLAG,'1');
+  }catch(e){ /* no storage: count the visit anyway */ }
+  (isNewSession?api('/hit/'+VISITS_KEY):api('/get/'+VISITS_KEY))
+    .then(function(j){ countEl.textContent=String(j.value); })
+    .catch(function(){ countEl.textContent='\u2013'; });
+
+  // Time: load the global total, then accumulate while visible.
+  api('/get/'+TICKS_KEY)
+    .then(function(j){ baseTicks=j.value|0; render(); })
+    .catch(function(){ /* offline: show this session's time only */ });
+
+  function flush(){
+    if(sending) return;
+    var now=Date.now();
+    if(pending(now)<TICK_S*1000) return;
+    sending=true;
+    pendingMs=pending(now)-TICK_S*1000;
+    visStart=(document.visibilityState!=='hidden')?now:null;
+    api('/hit/'+TICKS_KEY)
+      .then(function(j){ baseTicks=j.value|0; sending=false; render(); flush(); })
+      .catch(function(){ sending=false; });
+  }
+  setInterval(function(){ render(); flush(); },1000);
+
+  function finalFlush(){
+    var n=Math.round(pending(Date.now())/(TICK_S*1000));
+    pendingMs=0; visStart=null;
+    for(var i=0;i<n;i++){
+      api('/hit/'+TICKS_KEY,true)
+        .then(function(j){ baseTicks=j.value|0; render(); })
+        .catch(function(){});
+    }
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden') finalFlush();
+    else if(visStart===null) visStart=Date.now();
+  });
+  window.addEventListener('pagehide',finalFlush);
+  render();
+})();
+</script>
 </body>
 </html>
+
